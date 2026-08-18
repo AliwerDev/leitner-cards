@@ -130,7 +130,57 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 ---
 
-## 5. Struktura
+## 5. Postman
+
+Tayyor collection `postman/` papkasida — qo'lda endpoint kiritish shart emas.
+
+### Import qilish
+
+Postman'da **Import** tugmasini bosing va ikkala faylni tanlang:
+
+```
+postman/leitner-api.postman_collection.json      ← endpointlar
+postman/leitner-local.postman_environment.json   ← o'zgaruvchilar
+```
+
+So'ng o'ng yuqoridagi environment ro'yxatidan **Leitner Local** ni tanlang.
+
+### Ishlatish
+
+1. **Auth > Register** (yoki allaqachon ro'yxatdan o'tgan bo'lsangiz **Login**) ni yuboring
+2. Tokenlar avtomatik saqlanadi — qo'lda nusxalash shart emas
+3. Qolgan so'rovlar tokenni o'zi ishlatadi
+
+Xuddi shunday **Decks > Create deck** yaratilgan deck ID sini saqlaydi, shuning uchun
+View / Update / Delete darhol ishlaydi.
+
+### Nima bor
+
+| Papka | Ichida |
+|---|---|
+| Health | Servis + DB holati |
+| Auth | Register, Login, Me, Refresh, Logout |
+| Decks | List, Create, View, Update, Delete |
+| Xato holatlari | 401, 422, 404 tekshiruvlari |
+
+Har bir so'rovda test skripti bor — javob kodi va strukturasi avtomatik tekshiriladi.
+
+### Terminaldan ishga tushirish (ixtiyoriy)
+
+Butun collection'ni bir buyruq bilan sinash:
+
+```bash
+npx newman run postman/leitner-api.postman_collection.json
+```
+
+### Yangi endpoint qo'shsangiz
+
+Postman'da so'rovni qo'shing, so'ng collection'ni eksport qilib shu fayl ustiga yozing:
+**Collection > … > Export > Collection v2.1**
+
+---
+
+## 6. Struktura
 
 ```
 leitner-system/
@@ -146,13 +196,14 @@ leitner-system/
 │   ├── modules/api/v1/         # controllers + form modellari
 │   ├── migrations/
 │   └── web/index.php
+├── postman/                    # tayyor collection + environment
 ├── frontend/                   # (keyinchalik)
 └── mobile/                     # (keyinchalik)
 ```
 
 ---
 
-## 6. Frontend / mobile qo'shish
+## 7. Frontend / mobile qo'shish
 
 Ikkalasi ham `leitner` tarmog'iga qo'shiladi. Masalan frontend uchun
 `docker-compose.yml` ga:
@@ -178,7 +229,7 @@ API manzili: Android `http://10.0.2.2:8080`, iOS `http://localhost:8080`.
 
 ---
 
-## 7. Muammolarni hal qilish
+## 8. Muammolarni hal qilish
 
 **`docker info` xato beradi** — Docker Desktop ishga tushmagan. Ilovani oching.
 
@@ -213,7 +264,7 @@ docker compose exec php php yii migrate --interactive=0
 
 ---
 
-## 8. Keyingi bosqich
+## 9. Keyingi bosqich
 
 Leitner domeni hali qo'shilmagan. Rejalashtirilgan jadvallar:
 `decks`, `cards`, `review_logs` va box logikasi

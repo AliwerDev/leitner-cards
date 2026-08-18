@@ -120,6 +120,13 @@ $config = [
           "controller" => ["api/v1/deck"],
           "pluralize" => true,
         ],
+        
+        // Card CRUD
+        [
+          "class" => yii\rest\UrlRule::class,
+          "controller" => ["api/v1/card"],
+          "pluralize" => true,
+        ],
       ],
     ],
   ],
