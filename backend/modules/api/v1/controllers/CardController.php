@@ -4,6 +4,7 @@ namespace app\modules\api\v1\controllers;
 
 use Yii;
 use app\models\Card;
+use app\models\Deck;
 use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
 use yii\web\NotFoundHttpException;
@@ -29,9 +30,11 @@ class CardController extends BaseApiController
      // GET /api/v1/cards/?deckId=23
     public function actionIndex(int $deckId): ActiveDataProvider
     {
+        $deck = Deck::findDeck($deckId);
+
         return new ActiveDataProvider([
             'query' => Card::find()
-                ->where(['deck_id' => $deckId])
+                ->where(['deck_id' => $deck->id])
                 ->orderBy(['created_at' => SORT_DESC]),
             'pagination' => ['pageSize' => 20],
         ]);
