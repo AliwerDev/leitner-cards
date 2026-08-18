@@ -119,8 +119,11 @@ $config = [
           "class" => yii\rest\UrlRule::class,
           "controller" => ["api/v1/deck"],
           "pluralize" => true,
+          "extraPatterns" => [
+            "GET {id}/cards" => "cards",
+          ],
         ],
-        
+
         // Card CRUD
         [
           "class" => yii\rest\UrlRule::class,

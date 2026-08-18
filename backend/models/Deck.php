@@ -39,7 +39,6 @@ class Deck extends ActiveRecord
         ];
     }
 
-
     public function fields(): array
     {
         return ['id', 'name', 'description', 'created_at', 'updated_at'];
@@ -48,5 +47,10 @@ class Deck extends ActiveRecord
     public function getUser(): ActiveQuery
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
+    }
+
+    public function getCards(): ActiveQuery
+    {
+        return $this->hasMany(Card::class, ['deck_id' => 'id']);
     }
 }
