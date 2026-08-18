@@ -41,7 +41,7 @@ class Card extends ActiveRecord
 
     public function fields(): array
     {
-        return ['id', 'front', 'back', 'deck', 'deck.user', 'created_at', 'updated_at'];
+        return ['id', 'front', 'back', 'deck', 'created_at', 'updated_at'];
     }
 
     public function getDeck(): ActiveQuery
