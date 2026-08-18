@@ -42,7 +42,7 @@ class Deck extends ActiveRecord
 
     public function fields(): array
     {
-        return ['id', 'name', 'description', 'created_at', 'updated_at'];
+        return ['id', 'name', 'description', 'user', 'created_at', 'updated_at'];
     }
 
     public function getUser(): ActiveQuery

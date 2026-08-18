@@ -84,7 +84,11 @@ class CardController extends BaseApiController
      */
     private function findCard(int $id): Card
     {
-        $card = Card::findOne(['id' => $id]);
+        $card = Card::find()
+            ->joinWith('deck')
+            ->where(['card.id' => $id])
+            ->andWhere(['deck.user_id' => Yii::$app->user->id])
+            ->one();
 
         if ($card === null) {
             throw new NotFoundHttpException('Card not found.');
