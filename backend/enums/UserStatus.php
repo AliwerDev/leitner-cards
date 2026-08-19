@@ -28,7 +28,7 @@ enum UserStatus: int
   {
     return match ($this) {
       self::DELETED => 'O\'chirilgan',
-      self::INACTIVE => "Faolsiz",
+      self::INACTIVE => "Nofaol",
       self::ACTIVE => "Faol",
     };
   }
