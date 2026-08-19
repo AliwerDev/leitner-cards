@@ -2,6 +2,7 @@
 
 namespace app\modules\api\v1\models;
 
+use app\enums\UserStatus;
 use app\models\User;
 use yii\base\Model;
 
@@ -35,7 +36,7 @@ class RegisterForm extends Model
         $user = new User([
             'username' => $this->username,
             'email' => $this->email,
-            'status' => User::STATUS_ACTIVE,
+            'status' => UserStatus::Active->value,
         ]);
         $user->setPassword($this->password);
         $user->generateAuthKey();

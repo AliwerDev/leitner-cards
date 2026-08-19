@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use app\enums\UserStatus;
 use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
@@ -19,9 +20,6 @@ use yii\web\IdentityInterface;
  */
 class User extends ActiveRecord implements IdentityInterface
 {
-    public const STATUS_DELETED = 0;
-    public const STATUS_ACTIVE = 10;
-
     public static function tableName(): string
     {
         return '{{%user}}';
@@ -43,8 +41,8 @@ class User extends ActiveRecord implements IdentityInterface
             [['email'], 'string', 'max' => 255],
             [['username'], 'unique'],
             [['email'], 'unique'],
-            [['status'], 'default', 'value' => self::STATUS_ACTIVE],
-            [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_DELETED]],
+            [['status'], 'default', 'value' => UserStatus::ACTIVE->value],
+            [['status'], 'in', 'range' => UserStatus::values()],
         ];
     }
 
@@ -60,7 +58,7 @@ class User extends ActiveRecord implements IdentityInterface
 
     public static function findIdentity($id): ?self
     {
-        return static::findOne(['id' => $id, 'status' => self::STATUS_ACTIVE]);
+        return static::findOne(['id' => $id, 'status' => UserStatus::ACTIVE->value]);
     }
 
     /**
@@ -74,9 +72,24 @@ class User extends ActiveRecord implements IdentityInterface
     public static function findByUsernameOrEmail(string $login): ?self
     {
         return static::find()
-            ->where(['status' => self::STATUS_ACTIVE])
+            ->where(['status' => UserStatus::ACTIVE->value])
             ->andWhere(['or', ['username' => $login], ['email' => $login]])
             ->one();
+    }
+
+    public function getStatus(): UserStatus
+    {
+        return UserStatus::from($this->status);
+    }
+
+    public function setStatus(UserStatus $status): void
+    {
+        $this->status = $status->value;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->getStatus() === UserStatus::ACTIVE;
     }
 
     public function getId(): int
