@@ -17,6 +17,8 @@ class m260818_073033_create_deck_table extends Migration
             'user_id' => $this->integer()->notNull(),
             'name' => $this->string(255)->notNull(),
             'description' => $this->text()->null(),
+            'color' => $this->integer()->null(),
+            'direction' => $this->integer()->null(),
             'created_at' => $this->integer()->notNull(),
             'updated_at' => $this->integer()->notNull(),
         ]);
