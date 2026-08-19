@@ -14,9 +14,9 @@ class m260819_065745_create_card_progress_table extends Migration
   {
     $this->createTable("{{%card_progress}}", [
       "id" => $this->primaryKey(),
-      "card_id" => $this->integer()->notNull(),
       "user_id" => $this->integer()->notNull(),
-      "current_box" => $this->integer()->notNull(),
+      "card_id" => $this->integer()->notNull(),
+      "current_level" => $this->integer()->notNull(),
       "last_reviewed_at" => $this->date()->notNull(),
       "next_review_at" => $this->date()->notNull(),
     ]);

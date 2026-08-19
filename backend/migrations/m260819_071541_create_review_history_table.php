@@ -14,10 +14,10 @@ class m260819_071541_create_review_history_table extends Migration
   {
     $this->createTable("{{%review_history}}", [
       "id" => $this->primaryKey(),
-      "card_id" => $this->integer()->notNull(),
       "user_id" => $this->integer()->notNull(),
-      "box_before" => $this->integer()->notNull(),
-      "box_after" => $this->integer()->notNull(),
+      "card_id" => $this->integer()->notNull(),
+      "level_before" => $this->integer()->notNull(),
+      "level_after" => $this->integer()->notNull(),
       "was_correct" => $this->boolean()->notNull(),
       "reviewed_at" => $this->date()->notNull(),
     ]);
