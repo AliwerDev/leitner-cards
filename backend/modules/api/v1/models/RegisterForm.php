@@ -36,7 +36,7 @@ class RegisterForm extends Model
         $user = new User([
             'username' => $this->username,
             'email' => $this->email,
-            'status' => UserStatus::Active->value,
+            'status' => UserStatus::ACTIVE->value,
         ]);
         $user->setPassword($this->password);
         $user->generateAuthKey();
