@@ -4,28 +4,23 @@ import { StatsStrip } from "@/components/stats/stats-strip";
 import { LevelHistogram } from "@/components/stats/level-histogram";
 import { ReviewsTrend } from "@/components/stats/reviews-trend";
 import { AccuracyTrend } from "@/components/stats/accuracy-trend";
-import { DAY_RANGES, DEFAULT_DAYS, StatsFilters } from "@/components/stats/stats-filters";
+import { StatsFilters } from "@/components/stats/stats-filters";
 import { PageHeader } from "@/components/layout/page-header";
 import { getDailyStats, getStats } from "@/lib/api/endpoints/stats";
 import { listDecks } from "@/lib/api/endpoints/decks";
 import { formatAccuracy } from "@/lib/domain/format";
+import { parseDayRange } from "@/lib/domain/stats-range";
 import { uz } from "@/lib/i18n/uz";
 
 export const metadata: Metadata = { title: uz.stats.title };
 
 type PageProps = { searchParams: Promise<{ deckId?: string; days?: string }> };
 
-/** Only the ranges the filter offers, so a hand-typed value cannot widen it. */
-function parseDays(raw?: string): number {
-  const value = raw ? Number(raw) : NaN;
-  return DAY_RANGES.includes(value as (typeof DAY_RANGES)[number]) ? value : DEFAULT_DAYS;
-}
-
 export default async function StatsPage({ searchParams }: PageProps) {
   const { deckId: deckIdRaw, days: daysRaw } = await searchParams;
   const deckId = deckIdRaw ? Number(deckIdRaw) : undefined;
   const validDeckId = deckId && Number.isInteger(deckId) && deckId > 0 ? deckId : undefined;
-  const days = parseDays(daysRaw);
+  const days = parseDayRange(daysRaw);
 
   const [stats, decks, daily] = await Promise.all([
     getStats(validDeckId),
