@@ -80,11 +80,17 @@ class DeckController extends BaseApiController
         return ['deck' => $deck->toArray()];
     }
 
-    // PUT, PATCH /api/v1/decks/5
+    /**
+     * PUT, PATCH /api/v1/decks/5
+     *
+     * user_id is re-pinned after load(): it is a safe attribute, so a body that
+     * carries one would otherwise transfer the deck to another account.
+     */
     public function actionUpdate(int $id): array
     {
         $deck = Deck::findDeck($id);
         $deck->load(Yii::$app->request->getBodyParams(), '');
+        $deck->user_id = Yii::$app->user->id;
 
         if (!$deck->save()) {
             return $this->validationError($deck->getErrors());

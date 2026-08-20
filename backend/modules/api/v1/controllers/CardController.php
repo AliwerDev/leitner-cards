@@ -73,11 +73,23 @@ class CardController extends BaseApiController
         return ['card' => $card->toArray()];
     }
 
-    // PATCH, PUT /api/v1/cards/23
+    /**
+     * PATCH, PUT /api/v1/cards/23
+     *
+     * A card can be moved between decks, but only into another deck the caller
+     * owns - deck_id is a safe attribute, so load() would otherwise accept any
+     * deck id from the body and hand the card to a stranger.
+     */
     public function actionUpdate(int $id): array
     {
         $card = Card::findOwned($id);
+        $originalDeckId = $card->deck_id;
+
         $card->load(Yii::$app->request->getBodyParams(), '');
+
+        if ((int) $card->deck_id !== (int) $originalDeckId) {
+            $card->deck_id = Deck::findDeck((int) $card->deck_id)->id;
+        }
 
         if (!$card->save()) {
             return $this->validationError($card->getErrors());
