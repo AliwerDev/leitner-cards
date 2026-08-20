@@ -120,7 +120,6 @@ $config = [
           "controller" => ["api/v1/deck"],
           "pluralize" => true,
           "extraPatterns" => [
-            "GET {id}/cards" => "cards",
             "GET {id}/stats" => "stats",
           ],
         ],

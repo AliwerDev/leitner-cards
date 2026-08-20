@@ -19,7 +19,6 @@ class DeckController extends BaseApiController
                 'actions' => [
                     'index'  => ['GET', 'HEAD'],
                     'view'   => ['GET', 'HEAD'],
-                    'cards'  => ['GET', 'HEAD'],
                     'stats'  => ['GET', 'HEAD'],
                     'create' => ['POST'],
                     'update' => ['PUT', 'PATCH'],
@@ -44,14 +43,6 @@ class DeckController extends BaseApiController
     public function actionView(int $id): array
     {
         return ['deck' => Deck::findDeck($id)->toArray()];
-    }
-
-    // GET /api/v1/decks/5/cards
-    public function actionCards(int $id): array
-    {
-        $deck = Deck::findDeck($id);
-
-        return ['deck' => $deck->toArray(), 'cards' => $deck->cards];
     }
 
     // GET /api/v1/decks/5/stats

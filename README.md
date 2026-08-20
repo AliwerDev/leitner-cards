@@ -97,7 +97,6 @@ Barcha javoblar bir xil envelope shaklida:
 | GET | `/api/v1/decks/{id}` | Bearer | Bitta deck |
 | PUT/PATCH | `/api/v1/decks/{id}` | Bearer | Deckni tahrirlash |
 | DELETE | `/api/v1/decks/{id}` | Bearer | Deckni o'chirish |
-| GET | `/api/v1/decks/{id}/cards` | Bearer | Deck kartalari |
 | GET | `/api/v1/decks/{id}/stats` | Bearer | Deck bo'yicha statistika |
 | GET | `/api/v1/cards?deckId=N&q=matn` | Bearer | Kartalar ro'yxati; `q` old/orqa tomon bo'yicha qidiradi (255 belgigacha) |
 | POST | `/api/v1/cards` | Bearer | Karta yaratish (`deckId` body'da) |
@@ -110,6 +109,28 @@ Barcha javoblar bir xil envelope shaklida:
 | POST | `/api/v1/reviews` | Bearer | Javobni yozish (`{cardId, wasCorrect}`) |
 | POST | `/api/v1/reviews/reset` | Bearer | Kartani 1-darajaga qaytarish |
 | GET | `/api/v1/stats` | Bearer | Umumiy statistika |
+
+### Xatolar
+
+Xato javoblar ham bir xil shaklda keladi:
+
+```json
+{ "success": false, "data": null,
+  "error": { "code": 422, "name": "...", "message": "...", "fields": { "deckId": ["..."] } } }
+```
+
+`fields` faqat validatsiya xatolarida (422) bo'ladi. Klient bitta xato ishlovchi
+yozadi: `error.fields` bo'lsa forma maydonlariga tarqatadi, bo'lmasa
+`error.message` ni ko'rsatadi.
+
+`GET /api/v1/cards` da `deckId` berilmasa ham 422 qaytadi — 400 emas.
+
+### So'rov chekloviga oid
+
+`POST /api/v1/auth/login` va `POST /api/v1/auth/register` nginx darajasida
+cheklangan: bir IP uchun daqiqasiga 5 ta so'rov, 5 tagacha portlash ruxsat
+etiladi. Limitdan oshsa nginx **429** qaytaradi. Sozlama
+`docker/nginx/default.conf` faylida.
 
 ### Hisob turi va cheklovlar
 
@@ -190,62 +211,7 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 ---
 
-## 5. Postman
-
-> **Diqqat:** `postman/` fayllari repodan olib tashlangan (o'chirilgan holatda
-> staged). Qaytarish uchun: `git restore --staged --worktree postman/`.
-> Collection deck/card CRUD va review endpointlarini qamramaydi — qaytargandan
-> keyin qo'lda to'ldirish kerak.
-
-Tayyor collection `postman/` papkasida — qo'lda endpoint kiritish shart emas.
-
-### Import qilish
-
-Postman'da **Import** tugmasini bosing va ikkala faylni tanlang:
-
-```
-postman/leitner-api.postman_collection.json      ← endpointlar
-postman/leitner-local.postman_environment.json   ← o'zgaruvchilar
-```
-
-So'ng o'ng yuqoridagi environment ro'yxatidan **Leitner Local** ni tanlang.
-
-### Ishlatish
-
-1. **Auth > Register** (yoki allaqachon ro'yxatdan o'tgan bo'lsangiz **Login**) ni yuboring
-2. Tokenlar avtomatik saqlanadi — qo'lda nusxalash shart emas
-3. Qolgan so'rovlar tokenni o'zi ishlatadi
-
-Xuddi shunday **Decks > Create deck** yaratilgan deck ID sini saqlaydi, shuning uchun
-View / Update / Delete darhol ishlaydi.
-
-### Nima bor
-
-| Papka | Ichida |
-|---|---|
-| Health | Servis + DB holati |
-| Auth | Register, Login, Me, Refresh, Logout |
-| Decks | List, Create, View, Update, Delete |
-| Xato holatlari | 401, 422, 404 tekshiruvlari |
-
-Har bir so'rovda test skripti bor — javob kodi va strukturasi avtomatik tekshiriladi.
-
-### Terminaldan ishga tushirish (ixtiyoriy)
-
-Butun collection'ni bir buyruq bilan sinash:
-
-```bash
-npx newman run postman/leitner-api.postman_collection.json
-```
-
-### Yangi endpoint qo'shsangiz
-
-Postman'da so'rovni qo'shing, so'ng collection'ni eksport qilib shu fayl ustiga yozing:
-**Collection > … > Export > Collection v2.1**
-
----
-
-## 6. Struktura
+## 5. Struktura
 
 ```
 leitner-system/
@@ -269,7 +235,7 @@ leitner-system/
 
 ---
 
-## 7. Frontend / mobile qo'shish
+## 6. Frontend / mobile qo'shish
 
 Ikkalasi ham `leitner` tarmog'iga qo'shiladi. Masalan frontend uchun
 `docker-compose.yml` ga:
@@ -295,7 +261,7 @@ API manzili: Android `http://10.0.2.2:8080`, iOS `http://localhost:8080`.
 
 ---
 
-## 8. Muammolarni hal qilish
+## 7. Muammolarni hal qilish
 
 **`docker info` xato beradi** — Docker Desktop ishga tushmagan. Ilovani oching.
 
@@ -330,7 +296,7 @@ docker compose exec php php yii migrate --interactive=0
 
 ---
 
-## 9. Keyingi bosqich
+## 8. Keyingi bosqich
 
 Backend domeni tayyor: auth, deck/card CRUD va Leitner takrorlash sikli
 (`card_progress`, `review_history`, `ReviewService`) ishlaydi.

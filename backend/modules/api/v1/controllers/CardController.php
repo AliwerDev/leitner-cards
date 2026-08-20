@@ -37,9 +37,19 @@ class CardController extends BaseApiController
      * GET /api/v1/cards?deckId=23&q=kitob
      *
      * `q` filters on either side of the card, case-insensitively.
+     *
+     * deckId is optional in the signature so that a missing value returns the
+     * same 422 envelope as every other validation error. Binding it as a
+     * required int would let Yii raise a 400 without the `fields` detail.
      */
-    public function actionIndex(int $deckId, ?string $q = null): ActiveDataProvider|array
+    public function actionIndex(?int $deckId = null, ?string $q = null): ActiveDataProvider|array
     {
+        if ($deckId === null) {
+            return $this->validationError([
+                'deckId' => ['Deck tanlanmagan.'],
+            ]);
+        }
+
         $deck = Deck::findDeck($deckId);
         $q = trim((string) $q);
 
