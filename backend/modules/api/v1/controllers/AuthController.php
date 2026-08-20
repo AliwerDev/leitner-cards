@@ -125,23 +125,4 @@ class AuthController extends BaseApiController
 
         return $service;
     }
-
-    /**
-     * Returns the envelope directly so per-field messages survive; the error handler would drop them.
-     */
-    private function validationError(array $errors): array
-    {
-        Yii::$app->response->statusCode = 422;
-
-        return [
-            'success' => false,
-            'data' => null,
-            "error" => [
-                'code' => 422,
-                'name' => 'Unprocessable Entity',
-                'message' => 'Validation failed.',
-                'fields' => $errors,
-            ],
-        ];
-    }
 }

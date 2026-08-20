@@ -22,7 +22,7 @@ class m260818_073033_create_card_table extends Migration
     $this->createIndex("idx-card-deck_id", "{{%card}}", "deck_id");
 
     $this->addForeignKey(
-      "fk-card_deck_id",
+      "fk-card-deck_id",
       "{{%card}}",
       "deck_id",
       "{{%deck}}",

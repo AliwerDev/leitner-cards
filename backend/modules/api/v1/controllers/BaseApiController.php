@@ -3,6 +3,7 @@
 namespace app\modules\api\v1\controllers;
 
 use app\components\JwtHttpBearerAuth;
+use Yii;
 use yii\filters\ContentNegotiator;
 use yii\filters\Cors;
 use yii\rest\Controller;
@@ -48,5 +49,28 @@ abstract class BaseApiController extends Controller
         ];
 
         return $behaviors;
+    }
+
+    /**
+     * 422 response carrying per-field errors.
+     *
+     * Returns the full envelope on purpose: the response hook in config/web.php
+     * passes through any payload that already has a `success` key, which keeps
+     * the `fields` detail intact.
+     */
+    protected function validationError(array $errors): array
+    {
+        Yii::$app->response->statusCode = 422;
+
+        return [
+            'success' => false,
+            'data' => null,
+            'error' => [
+                'code' => 422,
+                'name' => 'Unprocessable Entity',
+                'message' => 'Validation failed.',
+                'fields' => $errors,
+            ],
+        ];
     }
 }

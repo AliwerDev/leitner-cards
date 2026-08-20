@@ -5,6 +5,7 @@ namespace app\models;
 use app\enums\UserStatus;
 use Yii;
 use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 
@@ -120,5 +121,25 @@ class User extends ActiveRecord implements IdentityInterface
     public function generateAuthKey(): void
     {
         $this->auth_key = Yii::$app->security->generateRandomString(32);
+    }
+
+    public function getDecks(): ActiveQuery
+    {
+        return $this->hasMany(Deck::class, ['user_id' => 'id']);
+    }
+
+    public function getRefreshTokens(): ActiveQuery
+    {
+        return $this->hasMany(RefreshToken::class, ['user_id' => 'id']);
+    }
+
+    public function getCardProgresses(): ActiveQuery
+    {
+        return $this->hasMany(CardProgress::class, ['user_id' => 'id']);
+    }
+
+    public function getReviewHistories(): ActiveQuery
+    {
+        return $this->hasMany(ReviewHistory::class, ['user_id' => 'id']);
     }
 }

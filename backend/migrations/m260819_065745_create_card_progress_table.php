@@ -16,18 +16,28 @@ class m260819_065745_create_card_progress_table extends Migration
       "id" => $this->primaryKey(),
       "user_id" => $this->integer()->notNull(),
       "card_id" => $this->integer()->notNull(),
-      "current_level" => $this->integer()->notNull(),
-      "last_reviewed_at" => $this->date()->notNull(),
-      "next_review_at" => $this->date()->notNull(),
+      "current_level" => $this->integer()->notNull()->defaultValue(1),
+      "last_reviewed_at" => $this->integer()->null(),
+      "next_review_at" => $this->integer()->null(),
+      "created_at" => $this->integer()->notNull(),
+      "updated_at" => $this->integer()->notNull(),
     ]);
 
-    $this->createIndex("idx-card_progress-card_id", "{{%card_progress}}", [
-      "user_id",
-      "card_id",
-    ]);
+    $this->createIndex(
+      "idx-card_progress-user_id-card_id",
+      "{{%card_progress}}",
+      ["user_id", "card_id"],
+      true
+    );
+
+    $this->createIndex(
+      "idx-card_progress-user_id-next_review_at",
+      "{{%card_progress}}",
+      ["user_id", "next_review_at"]
+    );
 
     $this->addForeignKey(
-      "idx-card_progress-card_id",
+      "fk-card_progress-card_id",
       "{{%card_progress}}",
       "card_id",
       "{{%card}}",
@@ -37,7 +47,7 @@ class m260819_065745_create_card_progress_table extends Migration
     );
 
     $this->addForeignKey(
-      "idx-card_progress-user_id",
+      "fk-card_progress-user_id",
       "{{%card_progress}}",
       "user_id",
       "{{%user}}",
@@ -52,6 +62,8 @@ class m260819_065745_create_card_progress_table extends Migration
    */
   public function safeDown()
   {
+    $this->dropForeignKey("fk-card_progress-user_id", "{{%card_progress}}");
+    $this->dropForeignKey("fk-card_progress-card_id", "{{%card_progress}}");
     $this->dropTable("{{%card_progress}}");
   }
 }

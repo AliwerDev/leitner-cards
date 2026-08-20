@@ -121,6 +121,7 @@ $config = [
           "pluralize" => true,
           "extraPatterns" => [
             "GET {id}/cards" => "cards",
+            "GET {id}/stats" => "stats",
           ],
         ],
 
@@ -129,7 +130,19 @@ $config = [
           "class" => yii\rest\UrlRule::class,
           "controller" => ["api/v1/card"],
           "pluralize" => true,
+          "extraPatterns" => [
+            "GET {id}/progress" => "progress",
+          ],
         ],
+
+        // Review loop. Explicit rules, not a rest\UrlRule: pluralize would also
+        // generate GET /reviews/{id} and swallow /reviews/due as an id.
+        "GET  api/v1/reviews/due" => "api/v1/review/due",
+        "GET  api/v1/reviews/count" => "api/v1/review/count",
+        "POST api/v1/reviews/reset" => "api/v1/review/reset",
+        "POST api/v1/reviews" => "api/v1/review/create",
+
+        "GET  api/v1/stats" => "api/v1/stats/index",
       ],
     ],
   ],

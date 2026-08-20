@@ -5,9 +5,10 @@ namespace app\modules\api\v1\controllers;
 use Yii;
 use app\models\Card;
 use app\models\Deck;
+use app\models\ReviewHistory;
+use app\services\ReviewService;
 use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
-use yii\web\NotFoundHttpException;
 
 class CardController extends BaseApiController
 {
@@ -17,17 +18,18 @@ class CardController extends BaseApiController
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'index'  => ['GET', 'HEAD'],
-                    'view'   => ['GET', 'HEAD'],
-                    'create' => ['POST'],
-                    'update' => ['PUT', 'PATCH'],
-                    'delete' => ['DELETE'],
+                    'index'    => ['GET', 'HEAD'],
+                    'view'     => ['GET', 'HEAD'],
+                    'progress' => ['GET', 'HEAD'],
+                    'create'   => ['POST'],
+                    'update'   => ['PUT', 'PATCH'],
+                    'delete'   => ['DELETE'],
                 ],
             ],
         ]);
     }
 
-     // GET /api/v1/cards/?deckId=23
+    // GET /api/v1/cards?deckId=23
     public function actionIndex(int $deckId): ActiveDataProvider
     {
         $deck = Deck::findDeck($deckId);
@@ -40,18 +42,27 @@ class CardController extends BaseApiController
         ]);
     }
 
-     // GET /api/v1/cards/23
+    // GET /api/v1/cards/23
     public function actionView(int $id): array
-    {       
-        return  ['card' => $this->findCard($id)->toArray()];
+    {
+        return ['card' => Card::findOwned($id)->toArray()];
     }
 
-     // POST /api/v1/cards
-    public function actionCreate(int $deckId): array
+    /**
+     * POST /api/v1/cards   body: {deckId, front, back}
+     *
+     * deckId goes through Deck::findDeck() so a card cannot be planted in a
+     * deck the caller does not own.
+     */
+    public function actionCreate(): array
     {
+        $body = Yii::$app->request->getBodyParams();
+        $deckId = (int) ($body['deckId'] ?? Yii::$app->request->getQueryParam('deckId'));
+        $deck = Deck::findDeck($deckId);
+
         $card = new Card();
-        $card->load(Yii::$app->request->getBodyParams(), '');
-        $card->deck_id = $deckId;
+        $card->load($body, '');
+        $card->deck_id = $deck->id;
 
         if (!$card->save()) {
             return $this->validationError($card->getErrors());
@@ -62,10 +73,10 @@ class CardController extends BaseApiController
         return ['card' => $card->toArray()];
     }
 
-    // PATCH, PUT /api/v1/cards
+    // PATCH, PUT /api/v1/cards/23
     public function actionUpdate(int $id): array
     {
-        $card = $this->findCard($id);
+        $card = Card::findOwned($id);
         $card->load(Yii::$app->request->getBodyParams(), '');
 
         if (!$card->save()) {
@@ -75,44 +86,37 @@ class CardController extends BaseApiController
         return ['card' => $card->toArray()];
     }
 
+    // DELETE /api/v1/cards/23
     public function actionDelete(int $id): array
     {
-        $this->findCard($id)->delete();
-        
-        return ["message" => "Card deleted successfully!"];
+        Card::findOwned($id)->delete();
+
+        return ['message' => 'Karta muvaffaqiyatli o\'chirildi.'];
     }
 
-     /**
-     * Loads a deck owned by the current user, or fails with 404.
+    /**
+     * GET /api/v1/cards/23/progress
+     *
+     * Current Leitner state plus the most recent reviews. A card that has never
+     * been studied reports the first level, due now, without creating a row.
      */
-    private function findCard(int $id): Card
+    public function actionProgress(int $id): array
     {
-        $card = Card::find()
-            ->joinWith('deck')
-            ->where(['card.id' => $id])
-            ->andWhere(['deck.user_id' => Yii::$app->user->id])
-            ->one();
+        $card = Card::findOwned($id);
+        $userId = (int) Yii::$app->user->id;
 
-        if ($card === null) {
-            throw new NotFoundHttpException('Card not found.');
-        }
+        $progress = (new ReviewService())->progressFor($userId, $card);
 
-        return $card;
-    }
-
-    private function validationError(array $errors): array
-    {
-        Yii::$app->response->statusCode = 422;
+        $history = ReviewHistory::find()
+            ->where(['user_id' => $userId, 'card_id' => $card->id])
+            ->orderBy(['reviewed_at' => SORT_DESC, 'id' => SORT_DESC])
+            ->limit(20)
+            ->all();
 
         return [
-            'success' => false,
-            'data' => null,
-            'error' => [
-                'code' => 422,
-                'name' => 'Unprocessable Entity',
-                'message' => 'Validation failed.',
-                'fields' => $errors,
-            ],
+            'card' => $card->toArray(),
+            'progress' => $progress->toArray(),
+            'history' => array_map(fn(ReviewHistory $h) => $h->toArray(), $history),
         ];
     }
 }

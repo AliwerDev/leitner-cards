@@ -4,9 +4,9 @@ namespace app\modules\api\v1\controllers;
 
 use Yii;
 use app\models\Deck;
+use app\services\ReviewService;
 use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
-use yii\web\NotFoundHttpException;
 
 class DeckController extends BaseApiController
 {
@@ -18,7 +18,8 @@ class DeckController extends BaseApiController
                 'actions' => [
                     'index'  => ['GET', 'HEAD'],
                     'view'   => ['GET', 'HEAD'],
-                    'cards'   => ['GET', 'HEAD'],
+                    'cards'  => ['GET', 'HEAD'],
+                    'stats'  => ['GET', 'HEAD'],
                     'create' => ['POST'],
                     'update' => ['PUT', 'PATCH'],
                     'delete' => ['DELETE'],
@@ -38,20 +39,32 @@ class DeckController extends BaseApiController
         ]);
     }
 
-    // GET /api/v1/decks/:id
+    // GET /api/v1/decks/5
     public function actionView(int $id): array
     {
-        return ['deck' => $this->findDeck($id)->toArray()];
+        return ['deck' => Deck::findDeck($id)->toArray()];
     }
 
+    // GET /api/v1/decks/5/cards
     public function actionCards(int $id): array
     {
-        $deck = $this->findDeck($id);
+        $deck = Deck::findDeck($id);
 
-        return ["deck" => $deck->toArray(), 'cards' => $deck->cards];
+        return ['deck' => $deck->toArray(), 'cards' => $deck->cards];
     }
 
-     // POST /api/v1/decks
+    // GET /api/v1/decks/5/stats
+    public function actionStats(int $id): array
+    {
+        $deck = Deck::findDeck($id);
+
+        return [
+            'deck' => $deck->toArray(),
+            'stats' => (new ReviewService())->stats((int) Yii::$app->user->id, $deck->id),
+        ];
+    }
+
+    // POST /api/v1/decks
     public function actionCreate(): array
     {
         $deck = new Deck();
@@ -66,11 +79,11 @@ class DeckController extends BaseApiController
 
         return ['deck' => $deck->toArray()];
     }
-    
-    // PUT /api/v1/decks/5
+
+    // PUT, PATCH /api/v1/decks/5
     public function actionUpdate(int $id): array
     {
-        $deck = $this->findDeck($id);
+        $deck = Deck::findDeck($id);
         $deck->load(Yii::$app->request->getBodyParams(), '');
 
         if (!$deck->save()) {
@@ -83,38 +96,8 @@ class DeckController extends BaseApiController
     // DELETE /api/v1/decks/5
     public function actionDelete(int $id): array
     {
-        $this->findDeck($id)->delete();
+        Deck::findDeck($id)->delete();
 
-        return ['message' => 'Deck deleted.'];
-    }
-
-    /**
-     * Loads a deck owned by the current user, or fails with 404.
-     */
-    private function findDeck(int $id): Deck
-    {
-        $deck = Deck::findOne(['id' => $id, 'user_id' => Yii::$app->user->id]);
-
-        if ($deck === null) {
-            throw new NotFoundHttpException('Deck not found.');
-        }
-
-        return $deck;
-    }
-
-    private function validationError(array $errors): array
-    {
-        Yii::$app->response->statusCode = 422;
-
-        return [
-            'success' => false,
-            'data' => null,
-            'error' => [
-                'code' => 422,
-                'name' => 'Unprocessable Entity',
-                'message' => 'Validation failed.',
-                'fields' => $errors,
-            ],
-        ];
+        return ['message' => 'Deck muvaffaqiyatli o\'chirildi.'];
     }
 }

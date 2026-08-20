@@ -92,6 +92,38 @@ Barcha javoblar bir xil envelope shaklida:
 | POST | `/api/v1/auth/refresh` | — | Tokenni yangilash |
 | POST | `/api/v1/auth/logout` | Bearer | Chiqish (refresh tokenni bekor qiladi) |
 | GET | `/api/v1/auth/me` | Bearer | Joriy foydalanuvchi |
+| GET | `/api/v1/decks` | Bearer | Decklar ro'yxati (sahifalangan) |
+| POST | `/api/v1/decks` | Bearer | Deck yaratish |
+| GET | `/api/v1/decks/{id}` | Bearer | Bitta deck |
+| PUT/PATCH | `/api/v1/decks/{id}` | Bearer | Deckni tahrirlash |
+| DELETE | `/api/v1/decks/{id}` | Bearer | Deckni o'chirish |
+| GET | `/api/v1/decks/{id}/cards` | Bearer | Deck kartalari |
+| GET | `/api/v1/decks/{id}/stats` | Bearer | Deck bo'yicha statistika |
+| GET | `/api/v1/cards?deckId=N` | Bearer | Kartalar ro'yxati |
+| POST | `/api/v1/cards` | Bearer | Karta yaratish (`deckId` body'da) |
+| GET | `/api/v1/cards/{id}` | Bearer | Bitta karta |
+| PUT/PATCH | `/api/v1/cards/{id}` | Bearer | Kartani tahrirlash |
+| DELETE | `/api/v1/cards/{id}` | Bearer | Kartani o'chirish |
+| GET | `/api/v1/cards/{id}/progress` | Bearer | Karta darajasi + takrorlash tarixi |
+| GET | `/api/v1/reviews/due` | Bearer | Hozir takrorlash kerak bo'lgan kartalar |
+| GET | `/api/v1/reviews/count` | Bearer | Takrorlash kerak bo'lganlar soni |
+| POST | `/api/v1/reviews` | Bearer | Javobni yozish (`{cardId, wasCorrect}`) |
+| POST | `/api/v1/reviews/reset` | Bearer | Kartani 1-darajaga qaytarish |
+| GET | `/api/v1/stats` | Bearer | Umumiy statistika |
+
+### Leitner mexanizmi
+
+Har karta uchun daraja (1..7) va `next_review_at` saqlanadi. Javob yozilganda:
+
+- **to'g'ri** → daraja bir pog'ona oshadi; 7-darajadan keyin `O'zlashtirilgan` (8) bo'ladi va boshqa takrorlanmaydi
+- **xato** → daraja 1-ga tushadi (klassik Leitner)
+
+Daraja bo'yicha takrorlash intervali: **0, 2, 3, 7, 15, 31, 61 kun**. Interval
+javob berilgan vaqtdan boshlanadi, eski jadvaldan emas — kechikish to'planib
+"takrorlash ko'chkisi" hosil qilmasligi uchun.
+
+Hech takrorlanmagan karta darhol `due` bo'ladi, lekin progress qatori faqat
+birinchi javobda yaratiladi (GET so'rovlar yozmaydi).
 
 ### Misollar
 
@@ -131,6 +163,11 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 ---
 
 ## 5. Postman
+
+> **Diqqat:** `postman/` fayllari repodan olib tashlangan (o'chirilgan holatda
+> staged). Qaytarish uchun: `git restore --staged --worktree postman/`.
+> Collection deck/card CRUD va review endpointlarini qamramaydi — qaytargandan
+> keyin qo'lda to'ldirish kerak.
 
 Tayyor collection `postman/` papkasida — qo'lda endpoint kiritish shart emas.
 
@@ -191,12 +228,13 @@ leitner-system/
 │   └── nginx/default.conf
 ├── backend/
 │   ├── config/                 # web.php, console.php, db.php, params.php
-│   ├── models/                 # User, RefreshToken
+│   ├── models/                 # User, RefreshToken, Deck, Card, CardProgress, ReviewHistory
+│   ├── enums/                  # CardLevel, DeckDirection, UserStatus
+│   ├── services/               # ReviewService (Leitner mexanizmi)
 │   ├── components/             # JwtService, JwtHttpBearerAuth
 │   ├── modules/api/v1/         # controllers + form modellari
 │   ├── migrations/
 │   └── web/index.php
-├── postman/                    # tayyor collection + environment
 ├── frontend/                   # (keyinchalik)
 └── mobile/                     # (keyinchalik)
 ```
@@ -266,6 +304,14 @@ docker compose exec php php yii migrate --interactive=0
 
 ## 9. Keyingi bosqich
 
-Leitner domeni hali qo'shilmagan. Rejalashtirilgan jadvallar:
-`decks`, `cards`, `review_logs` va box logikasi
-(to'g'ri javob → keyingi box, xato → 1-box, box bo'yicha takrorlash intervali).
+Backend domeni tayyor: auth, deck/card CRUD va Leitner takrorlash sikli
+(`card_progress`, `review_history`, `ReviewService`) ishlaydi.
+
+Keyingi ishlar:
+
+- **Test frameworki** — hozir avtomatik test yo'q. `CardLevel` uchun PHPUnit
+  unit testlari eng arzon boshlanish nuqtasi (DB kerak emas).
+- **Frontend** (7-bo'limga qarang) — `/reviews/due` → javob → `/reviews` sikli.
+- **Kunlik limit / sessiya rejimi** — hozir `due` barcha yetib kelgan kartalarni
+  qaytaradi, `limit` parametri bilan cheklanadi.
+- **Teglar** — `tag` jadvali olib tashlangan, kerak bo'lsa qaytadan loyihalash kerak.
