@@ -2,7 +2,9 @@
 
 namespace app\models;
 
+use app\enums\UserRole;
 use app\enums\UserStatus;
+use app\enums\UserType;
 use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveQuery;
@@ -16,6 +18,8 @@ use yii\web\IdentityInterface;
  * @property string $password_hash
  * @property string $auth_key
  * @property int    $status
+ * @property int    $type   see UserType: quotas apply to Regular only
+ * @property int    $role   see UserRole: set directly in the database
  * @property int    $created_at
  * @property int    $updated_at
  */
@@ -44,6 +48,10 @@ class User extends ActiveRecord implements IdentityInterface
             [['email'], 'unique'],
             [['status'], 'default', 'value' => UserStatus::ACTIVE->value],
             [['status'], 'in', 'range' => UserStatus::values()],
+            [['type'], 'default', 'value' => UserType::Regular->value],
+            [['type'], 'in', 'range' => UserType::values()],
+            [['role'], 'default', 'value' => UserRole::User->value],
+            [['role'], 'in', 'range' => UserRole::values()],
         ];
     }
 
@@ -53,6 +61,9 @@ class User extends ActiveRecord implements IdentityInterface
             'id',
             'username',
             'email',
+            'type',
+            'type_label' => fn(self $model) => $model->getType()->label(),
+            'is_premium' => fn(self $model) => $model->getType() === UserType::Premium,
             'created_at',
         ];
     }
@@ -91,6 +102,31 @@ class User extends ActiveRecord implements IdentityInterface
     public function isActive(): bool
     {
         return $this->getStatus() === UserStatus::ACTIVE;
+    }
+
+    public function getType(): UserType
+    {
+        return UserType::tryFrom((int) $this->type) ?? UserType::Regular;
+    }
+
+    public function setType(UserType $type): void
+    {
+        $this->type = $type->value;
+    }
+
+    public function getRole(): UserRole
+    {
+        return UserRole::tryFrom((int) $this->role) ?? UserRole::User;
+    }
+
+    public function setRole(UserRole $role): void
+    {
+        $this->role = $role->value;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->getRole()->isAdmin();
     }
 
     public function getId(): int

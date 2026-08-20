@@ -4,6 +4,7 @@ namespace app\modules\api\v1\controllers;
 
 use Yii;
 use app\models\Deck;
+use app\services\QuotaService;
 use app\services\ReviewService;
 use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
@@ -67,6 +68,13 @@ class DeckController extends BaseApiController
     // POST /api/v1/decks
     public function actionCreate(): array
     {
+        $userId = (int) Yii::$app->user->id;
+        $quota = new QuotaService();
+
+        if (!$quota->canCreateDeck($userId)) {
+            return $this->validationError($quota->deckLimitError($userId));
+        }
+
         $deck = new Deck();
         $deck->load(Yii::$app->request->getBodyParams(), '');
         $deck->user_id = Yii::$app->user->id;

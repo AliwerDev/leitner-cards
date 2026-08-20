@@ -8,6 +8,7 @@ use app\models\RefreshToken;
 use app\models\User;
 use app\modules\api\v1\models\LoginForm;
 use app\modules\api\v1\models\RegisterForm;
+use app\services\QuotaService;
 use yii\filters\VerbFilter;
 use yii\web\BadRequestHttpException;
 use yii\web\ServerErrorHttpException;
@@ -115,7 +116,12 @@ class AuthController extends BaseApiController
         /** @var User $user */
         $user = Yii::$app->user->identity;
 
-        return ['user' => $user->toArray()];
+        return [
+            'user' => $user->toArray(),
+            // The client needs the quota to disable "add" buttons before the
+            // request fails.
+            'quota' => (new QuotaService())->summary($user->id),
+        ];
     }
 
     private function jwt(): JwtService

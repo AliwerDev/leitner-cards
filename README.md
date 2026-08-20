@@ -99,7 +99,7 @@ Barcha javoblar bir xil envelope shaklida:
 | DELETE | `/api/v1/decks/{id}` | Bearer | Deckni o'chirish |
 | GET | `/api/v1/decks/{id}/cards` | Bearer | Deck kartalari |
 | GET | `/api/v1/decks/{id}/stats` | Bearer | Deck bo'yicha statistika |
-| GET | `/api/v1/cards?deckId=N` | Bearer | Kartalar ro'yxati |
+| GET | `/api/v1/cards?deckId=N&q=matn` | Bearer | Kartalar ro'yxati; `q` old/orqa tomon bo'yicha qidiradi (255 belgigacha) |
 | POST | `/api/v1/cards` | Bearer | Karta yaratish (`deckId` body'da) |
 | GET | `/api/v1/cards/{id}` | Bearer | Bitta karta |
 | PUT/PATCH | `/api/v1/cards/{id}` | Bearer | Kartani tahrirlash |
@@ -110,6 +110,34 @@ Barcha javoblar bir xil envelope shaklida:
 | POST | `/api/v1/reviews` | Bearer | Javobni yozish (`{cardId, wasCorrect}`) |
 | POST | `/api/v1/reviews/reset` | Bearer | Kartani 1-darajaga qaytarish |
 | GET | `/api/v1/stats` | Bearer | Umumiy statistika |
+
+### Hisob turi va cheklovlar
+
+Har foydalanuvchining `type` (hisob turi) va `role` ustuni bor. Cheklovlar
+`UserType` enumda saqlanadi (`backend/enums/UserType.php`):
+
+| Tur | Deck | Har deckda karta |
+|---|---|---|
+| Oddiy (`type=1`) | 3 | 300 |
+| Premium (`type=10`) | cheklovsiz | cheklovsiz |
+
+Limitga yetganda `POST /api/v1/decks` va `POST /api/v1/cards` **422** qaytaradi,
+xabar esa aniq limitni aytadi. `GET /api/v1/auth/me` javobida `quota` bo'limi
+bor — klient tugmani oldindan o'chirib qo'yishi uchun.
+
+Kartani boshqa deckga ko'chirishda ham maqsad deck limiti tekshiriladi, aks holda
+bir deckni to'ldirib qolganini boshqasiga surish bilan limitni aylanib o'tish
+mumkin bo'lardi.
+
+Turni o'zgartirish uchun (hozircha faqat DB'dan):
+
+```bash
+docker compose exec db psql -U leitner -d leitner   -c "UPDATE \"user\" SET type = 10 WHERE username = 'alisher';"
+```
+
+`role` (`1` = foydalanuvchi, `10` = administrator) ham xuddi shunday DB'dan
+o'rnatiladi. Hozircha hech qanday tekshiruv uni o'qimaydi — ustun va enum
+kelajak uchun tayyor turadi. `role` API javoblarida ko'rinmaydi.
 
 ### Leitner mexanizmi
 
@@ -229,8 +257,8 @@ leitner-system/
 ├── backend/
 │   ├── config/                 # web.php, console.php, db.php, params.php
 │   ├── models/                 # User, RefreshToken, Deck, Card, CardProgress, ReviewHistory
-│   ├── enums/                  # CardLevel, DeckDirection, UserStatus
-│   ├── services/               # ReviewService (Leitner mexanizmi)
+│   ├── enums/                  # CardLevel, DeckDirection, UserStatus, UserType, UserRole
+│   ├── services/               # ReviewService (Leitner), QuotaService (cheklovlar)
 │   ├── components/             # JwtService, JwtHttpBearerAuth
 │   ├── modules/api/v1/         # controllers + form modellari
 │   ├── migrations/

@@ -6,12 +6,16 @@ use Yii;
 use app\models\Card;
 use app\models\Deck;
 use app\models\ReviewHistory;
+use app\services\QuotaService;
 use app\services\ReviewService;
 use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
 
 class CardController extends BaseApiController
 {
+    /** Longest accepted `q` value. Keeps the query string within nginx buffers. */
+    private const MAX_SEARCH_LENGTH = 255;
+
     public function behaviors(): array
     {
         return array_merge(parent::behaviors(), [
@@ -29,15 +33,41 @@ class CardController extends BaseApiController
         ]);
     }
 
-    // GET /api/v1/cards?deckId=23
-    public function actionIndex(int $deckId): ActiveDataProvider
+    /**
+     * GET /api/v1/cards?deckId=23&q=kitob
+     *
+     * `q` filters on either side of the card, case-insensitively.
+     */
+    public function actionIndex(int $deckId, ?string $q = null): ActiveDataProvider|array
     {
         $deck = Deck::findDeck($deckId);
+        $q = trim((string) $q);
+
+        if (mb_strlen($q) > self::MAX_SEARCH_LENGTH) {
+            return $this->validationError([
+                'q' => [sprintf('Qidiruv matni %d belgidan oshmasligi kerak.', self::MAX_SEARCH_LENGTH)],
+            ]);
+        }
+
+        $query = Card::find()
+            ->where(['deck_id' => $deck->id])
+            ->orderBy(['created_at' => SORT_DESC]);
+
+        if ($q !== '') {
+            // Escape the LIKE wildcards so a literal % or _ matches itself
+            // instead of everything. Passing false keeps Yii from re-wrapping
+            // the value, so the surrounding %...% is added here.
+            $needle = '%' . addcslashes($q, '%_\\') . '%';
+
+            $query->andWhere([
+                'or',
+                ['ilike', 'front', $needle, false],
+                ['ilike', 'back', $needle, false],
+            ]);
+        }
 
         return new ActiveDataProvider([
-            'query' => Card::find()
-                ->where(['deck_id' => $deck->id])
-                ->orderBy(['created_at' => SORT_DESC]),
+            'query' => $query,
             'pagination' => ['pageSize' => 20],
         ]);
     }
@@ -59,6 +89,13 @@ class CardController extends BaseApiController
         $body = Yii::$app->request->getBodyParams();
         $deckId = (int) ($body['deckId'] ?? Yii::$app->request->getQueryParam('deckId'));
         $deck = Deck::findDeck($deckId);
+
+        $userId = (int) Yii::$app->user->id;
+        $quota = new QuotaService();
+
+        if (!$quota->canAddCard($userId, $deck->id)) {
+            return $this->validationError($quota->cardLimitError($userId));
+        }
 
         $card = new Card();
         $card->load($body, '');
@@ -88,7 +125,17 @@ class CardController extends BaseApiController
         $card->load(Yii::$app->request->getBodyParams(), '');
 
         if ((int) $card->deck_id !== (int) $originalDeckId) {
-            $card->deck_id = Deck::findDeck((int) $card->deck_id)->id;
+            $target = Deck::findDeck((int) $card->deck_id);
+            $userId = (int) Yii::$app->user->id;
+            $quota = new QuotaService();
+
+            // Without this the card limit could be side-stepped by filling one
+            // deck and moving the overflow into another.
+            if (!$quota->canAddCard($userId, $target->id)) {
+                return $this->validationError($quota->cardLimitError($userId));
+            }
+
+            $card->deck_id = $target->id;
         }
 
         if (!$card->save()) {
