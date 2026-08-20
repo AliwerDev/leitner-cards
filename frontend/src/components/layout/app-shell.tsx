@@ -27,7 +27,7 @@ export function AppShell({
           "px-lg mx-auto w-full max-w-6xl flex-1",
           // The island floats above this padding on desktop; on mobile nothing
           // sits above the content, so the top gap stays modest.
-          "pt-lg md:pt-md",
+          "pt-lg md:pt-xl",
           // Clears the floating dock so the last card is never trapped under it.
           "pb-[calc(var(--shell-chrome-v)+var(--space-lg))] md:pb-lg",
         )}
