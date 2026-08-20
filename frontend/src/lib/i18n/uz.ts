@@ -1,0 +1,202 @@
+/**
+ * Every user-facing string in the app.
+ *
+ * Code, comments and identifiers are English; UI copy is Uzbek (Latin), which
+ * matches the backend. Use the ASCII apostrophe (yo'q, O'zlashtirilgan), not a
+ * typographic one - the backend does the same and mismatched glyphs look wrong
+ * side by side.
+ *
+ * Reuse the backend's vocabulary: deck, karta, daraja, takrorlash.
+ */
+export const uz = {
+  app: {
+    name: "Leitner",
+    tagline: "Kartalar bilan yodlash tizimi",
+  },
+
+  nav: {
+    decks: "Decklar",
+    study: "Takrorlash",
+    stats: "Statistika",
+    profile: "Profil",
+    logout: "Chiqish",
+    theme: "Mavzu",
+    themeLight: "Yorug'",
+    themeDark: "Qorong'i",
+    themeSystem: "Tizim",
+  },
+
+  common: {
+    save: "Saqlash",
+    cancel: "Bekor qilish",
+    delete: "O'chirish",
+    edit: "Tahrirlash",
+    create: "Yaratish",
+    close: "Yopish",
+    back: "Orqaga",
+    retry: "Qayta urinish",
+    loading: "Yuklanmoqda...",
+    search: "Qidirish",
+    optional: "ixtiyoriy",
+    noData: "Ma'lumot yo'q",
+    unlimited: "Cheklovsiz",
+    of: "/",
+  },
+
+  errors: {
+    unexpected: "Kutilmagan xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
+    network: "Serverga ulanib bo'lmadi. Internet aloqasini tekshiring.",
+    rateLimited: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urinib ko'ring.",
+    unauthorized: "Sessiya tugadi. Qaytadan kiring.",
+    notFound: "Ma'lumot topilmadi.",
+    server: "Serverda xatolik. Birozdan so'ng qayta urinib ko'ring.",
+    invalidCredentials: "Login yoki parol xato.",
+    pageNotFound: "Sahifa topilmadi.",
+    deckNotFound: "Deck topilmadi.",
+    cardNotFound: "Karta topilmadi.",
+  },
+
+  validation: {
+    required: "Bu maydon to'ldirilishi shart.",
+    email: "Email manzil noto'g'ri.",
+    minLength: (n: number) => `Kamida ${n} ta belgi bo'lishi kerak.`,
+    maxLength: (n: number) => `Ko'pi bilan ${n} ta belgi bo'lishi mumkin.`,
+    usernamePattern: "Faqat harf, raqam, nuqta, chiziqcha va pastki chiziq ishlatish mumkin.",
+    passwordMismatch: "Parollar mos kelmadi.",
+  },
+
+  auth: {
+    loginTitle: "Hisobingizga kiring",
+    loginSubtitle: "Kartalaringizni takrorlashni davom ettiring.",
+    registerTitle: "Yangi hisob yarating",
+    registerSubtitle: "Bir daqiqada boshlang.",
+    loginField: "Foydalanuvchi nomi yoki email",
+    username: "Foydalanuvchi nomi",
+    email: "Email",
+    password: "Parol",
+    passwordConfirm: "Parolni tasdiqlang",
+    loginSubmit: "Kirish",
+    registerSubmit: "Ro'yxatdan o'tish",
+    noAccount: "Hisobingiz yo'qmi?",
+    hasAccount: "Hisobingiz bormi?",
+    usernameHint: "3-64 belgi; harf, raqam, nuqta, chiziqcha va pastki chiziq.",
+    passwordHint: "Kamida 8 ta belgi.",
+    loggingOut: "Chiqilmoqda...",
+  },
+
+  deck: {
+    title: "Decklar",
+    one: "Deck",
+    create: "Yangi deck",
+    edit: "Deckni tahrirlash",
+    name: "Nomi",
+    description: "Tavsif",
+    color: "Rang",
+    direction: "Yo'nalish",
+    directionFrontToBack: "Old -> Orqa",
+    directionBackToFront: "Orqa -> Old",
+    directionHint: "Takrorlashda kartaning qaysi tomoni birinchi ko'rsatiladi.",
+    cardCount: "karta",
+    empty: "Hali deck yo'q",
+    emptyHint: "Birinchi deckingizni yarating va kartalar qo'shing.",
+    deleteTitle: "Deckni o'chirish",
+    deleteConfirm: (name: string) =>
+      `"${name}" deckini o'chirasizmi? Uning barcha kartalari va takrorlash tarixi ham o'chadi. Bu amalni qaytarib bo'lmaydi.`,
+    startStudy: "Boshlash",
+    dueCount: (n: number) => `${n} ta takrorlash kerak`,
+    noDue: "Takrorlash kerak emas",
+  },
+
+  card: {
+    title: "Kartalar",
+    one: "Karta",
+    create: "Karta qo'shish",
+    edit: "Kartani tahrirlash",
+    front: "Old tomoni",
+    back: "Orqa tomoni",
+    empty: "Bu deckda karta yo'q",
+    emptyHint: "Birinchi kartani qo'shing.",
+    searchPlaceholder: "Kartalar ichidan qidirish...",
+    searchEmpty: "Qidiruv bo'yicha karta topilmadi.",
+    deleteTitle: "Kartani o'chirish",
+    deleteConfirm: "Bu kartani o'chirasizmi? Uning takrorlash tarixi ham o'chadi.",
+    move: "Boshqa deckga ko'chirish",
+    moveTitle: "Kartani ko'chirish",
+    history: "Takrorlash tarixi",
+    historyEmpty: "Bu karta hali takrorlanmagan.",
+    deckFull: "To'la",
+  },
+
+  study: {
+    title: "Takrorlash",
+    reveal: "Ko'rsatish",
+    correct: "Bilardim",
+    wrong: "Bilmadim",
+    wrongHint: "1-darajaga qaytadi",
+    resetCard: "1-darajaga qaytarish",
+    exit: "Sessiyani tugatish",
+    exitConfirm: "Sessiyani tugatasizmi? Yuborilmagan javoblar bo'lishi mumkin.",
+    empty: "Hozircha takrorlash kerak bo'lgan karta yo'q.",
+    emptyHint: "Barcha kartalar takrorlangan. Keyinroq qaytib keling.",
+    deckEmpty: "Bu deckda karta yo'q",
+    ruleTitle: "Leitner qoidasi",
+    ruleBody:
+      "To'g'ri javob kartani bir daraja oshiradi, xato javob esa 1-darajaga qaytaradi.",
+    mastered: "O'zlashtirildi!",
+    progress: (done: number, total: number) => `${done} / ${total}`,
+    shortcuts: "Klaviatura",
+    shortcutReveal: "Javobni ko'rsatish",
+    shortcutCorrect: "Bilardim",
+    shortcutWrong: "Bilmadim",
+    shortcutReset: "1-darajaga qaytarish",
+    shortcutExit: "Chiqish",
+    shortcutHelp: "Yordam",
+    summaryTitle: "Sessiya yakunlandi",
+    summaryTotal: "Jami javob",
+    summaryCorrect: "To'g'ri",
+    summaryWrong: "Xato",
+    summaryAccuracy: "Aniqlik",
+    summaryMastered: "Yangi o'zlashtirilgan",
+    summaryAgain: "Yana takrorlash",
+    summaryMoreLeft: "Yana kartalar bor",
+    backToDeck: "Deckka qaytish",
+    unsavedAnswers: (n: number) => `${n} ta javob saqlanmadi`,
+    resendAnswers: "Qayta yuborish",
+  },
+
+  stats: {
+    title: "Statistika",
+    totalCards: "Jami karta",
+    dueNow: "Takrorlash kerak",
+    mastered: "O'zlashtirilgan",
+    notStarted: "Boshlanmagan",
+    byLevel: "Darajalar bo'yicha",
+    reviewsToday: "Oxirgi 24 soatdagi takrorlash",
+    accuracy7d: "7 kunlik aniqlik",
+    allDecks: "Barcha decklar",
+    empty: "Hali statistika yo'q",
+    emptyHint: "Birinchi takrorlash sessiyangizni boshlang.",
+  },
+
+  profile: {
+    title: "Profil",
+    account: "Hisob",
+    memberSince: "Ro'yxatdan o'tgan",
+    tier: "Tarif",
+    quota: "Cheklovlar",
+    decksUsed: "Ishlatilgan decklar",
+    cardsPerDeck: "Har deckda karta",
+    upgradeHint: "Premium hisobga o'tish uchun administrator bilan bog'laning.",
+  },
+
+  quota: {
+    decksLabel: (used: number, max: number) => `${used} / ${max} deck`,
+    decksUnlimited: "Cheklovsiz deck",
+    cardsLabel: (used: number, max: number) => `${used} / ${max} karta`,
+    deckLimitReached: (max: number) =>
+      `Deck limiti tugadi (${max} ta). Premium hisobda cheklov yo'q.`,
+    cardLimitReached: (max: number) =>
+      `Karta limiti tugadi (${max} ta). Premium hisobda cheklov yo'q.`,
+    lastDeckSlot: "Oxirgi deck slot qoldi.",
+  },
+} as const;

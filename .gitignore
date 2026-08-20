@@ -7,8 +7,15 @@ backend/web/assets/*
 !backend/web/assets/.gitkeep
 backend/composer.lock
 
+# Frontend build artifacts. See frontend/.gitignore for the full set;
+# these stay here so the repo is protected even without that file.
 frontend/node_modules/
-frontend/dist/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+frontend/.env
+frontend/.env.local
+
 mobile/node_modules/
 
 .idea/

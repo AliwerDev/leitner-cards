@@ -1,0 +1,439 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   THE TOKEN LAYER
+   ----------------------------------------------------------------------------
+   This is the only file in the app that contains raw values. If you are typing
+   a "#", a "px", or a color name anywhere else, you are in the wrong file: add
+   a semantic role here instead.
+
+   Three layers, strictly ordered:
+     1. Primitives     --palette-*, --space-*, --radius-*, ...  raw, theme-free
+     2. Semantic roles --color-surface, --color-text-muted, ... redefined per
+                       theme. THIS is the vocabulary components may name.
+     3. @theme         maps roles onto Tailwind utility names (bg-surface, ...)
+
+   Components never name a primitive. Only roles.
+   ========================================================================= */
+
+/* ── Layer 1: primitives. Theme-independent raw values. ──────────────────── */
+:root {
+  /* Neutral ramp. OKLCH keeps the perceptual steps even across the scale,
+     which a hex ramp does not. */
+  --palette-neutral-0: oklch(100% 0 0);
+  --palette-neutral-50: oklch(98.4% 0.002 247);
+  --palette-neutral-100: oklch(96.2% 0.004 247);
+  --palette-neutral-200: oklch(92.2% 0.006 247);
+  --palette-neutral-300: oklch(86.5% 0.008 247);
+  --palette-neutral-400: oklch(70.4% 0.012 247);
+  --palette-neutral-500: oklch(55.4% 0.014 247);
+  --palette-neutral-600: oklch(44.6% 0.014 247);
+  --palette-neutral-700: oklch(36% 0.014 247);
+  --palette-neutral-800: oklch(26.9% 0.014 247);
+  --palette-neutral-900: oklch(20.5% 0.014 247);
+  --palette-neutral-950: oklch(14.5% 0.016 247);
+
+  /* Accent ramp (indigo). */
+  --palette-accent-100: oklch(93% 0.043 264);
+  --palette-accent-200: oklch(88% 0.068 264);
+  --palette-accent-300: oklch(80.9% 0.105 264);
+  --palette-accent-500: oklch(58.5% 0.196 264);
+  --palette-accent-600: oklch(51.1% 0.196 264);
+  --palette-accent-700: oklch(45.7% 0.178 264);
+  --palette-accent-900: oklch(30% 0.12 264);
+
+  /* Feedback ramps. */
+  --palette-success-100: oklch(94.5% 0.048 149);
+  --palette-success-500: oklch(62.7% 0.17 149);
+  --palette-success-600: oklch(55% 0.155 149);
+  --palette-success-700: oklch(46% 0.13 149);
+  --palette-success-900: oklch(29% 0.08 149);
+
+  --palette-danger-100: oklch(94% 0.036 27);
+  --palette-danger-500: oklch(58.6% 0.222 27);
+  --palette-danger-600: oklch(52% 0.208 27);
+  --palette-danger-700: oklch(45% 0.18 27);
+  --palette-danger-900: oklch(28% 0.11 27);
+
+  --palette-warning-100: oklch(96% 0.05 85);
+  --palette-warning-500: oklch(76.9% 0.166 70);
+  --palette-warning-600: oklch(68% 0.155 65);
+  --palette-warning-700: oklch(57% 0.13 60);
+  --palette-warning-900: oklch(33% 0.08 60);
+
+  --palette-info-100: oklch(94% 0.035 240);
+  --palette-info-500: oklch(62.3% 0.152 240);
+  --palette-info-600: oklch(55% 0.145 240);
+  --palette-info-700: oklch(47% 0.125 240);
+  --palette-info-900: oklch(30% 0.08 240);
+
+  /* Deck palette: 8 hues in a fixed order. deck.color is an integer index
+     into this list; see lib/domain/deck-color.ts. Storing an index rather
+     than a hex value means this palette can be restyled - including per
+     theme - with no data migration. */
+  --palette-deck-1: oklch(58.5% 0.196 264); /* indigo  */
+  --palette-deck-2: oklch(62.7% 0.17 149); /* green   */
+  --palette-deck-3: oklch(58.6% 0.222 27); /* red     */
+  --palette-deck-4: oklch(76.9% 0.166 70); /* amber   */
+  --palette-deck-5: oklch(62.3% 0.152 240); /* blue    */
+  --palette-deck-6: oklch(58% 0.21 320); /* fuchsia */
+  --palette-deck-7: oklch(65% 0.14 190); /* teal    */
+  --palette-deck-8: oklch(55.4% 0.014 247); /* slate   */
+
+  /* Spacing. 4px base, t-shirt named so intent survives a refactor. */
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* Radii. */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Typography. */
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+
+  /* Motion. */
+  --duration-instant: 80ms;
+  --duration-fast: 140ms;
+  --duration-normal: 220ms;
+  --duration-slow: 360ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Layout constants. */
+  --sidebar-width: 15rem;
+  --topbar-height: 3.5rem;
+  --content-max: 72rem;
+  --study-card-min-height: 18rem;
+
+  /* Z-index scale, named so nobody invents z-[9999]. */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+}
+
+/* ── Layer 2: semantic roles. Light theme. ───────────────────────────────── */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-canvas: var(--palette-neutral-50);
+  --color-surface: var(--palette-neutral-0);
+  --color-surface-raised: var(--palette-neutral-0);
+  --color-surface-sunken: var(--palette-neutral-100);
+  --color-surface-hover: var(--palette-neutral-100);
+  --color-surface-active: var(--palette-neutral-200);
+
+  --color-text: var(--palette-neutral-900);
+  --color-text-muted: var(--palette-neutral-600);
+  --color-text-subtle: var(--palette-neutral-500);
+  --color-text-inverted: var(--palette-neutral-0);
+  --color-text-on-accent: var(--palette-neutral-0);
+
+  --color-border: var(--palette-neutral-200);
+  --color-border-strong: var(--palette-neutral-300);
+  --color-border-focus: var(--palette-accent-500);
+
+  --color-accent: var(--palette-accent-600);
+  --color-accent-hover: var(--palette-accent-700);
+  --color-accent-subtle: var(--palette-accent-100);
+  --color-accent-text: var(--palette-accent-700);
+
+  --color-success: var(--palette-success-600);
+  --color-success-subtle: var(--palette-success-100);
+  --color-success-text: var(--palette-success-700);
+
+  --color-danger: var(--palette-danger-600);
+  --color-danger-hover: var(--palette-danger-700);
+  --color-danger-subtle: var(--palette-danger-100);
+  --color-danger-text: var(--palette-danger-700);
+
+  --color-warning: var(--palette-warning-600);
+  --color-warning-subtle: var(--palette-warning-100);
+  --color-warning-text: var(--palette-warning-700);
+
+  --color-info: var(--palette-info-600);
+  --color-info-subtle: var(--palette-info-100);
+  --color-info-text: var(--palette-info-700);
+
+  /* Study-loop roles. The one place these semantics are defined. */
+  --color-mastered: var(--palette-accent-600);
+  --color-mastered-subtle: var(--palette-accent-100);
+  --color-correct: var(--palette-success-600);
+  --color-wrong: var(--palette-danger-600);
+
+  --shadow-sm: 0 1px 2px oklch(20.5% 0.014 247 / 0.06);
+  --shadow-md:
+    0 4px 6px -1px oklch(20.5% 0.014 247 / 0.08), 0 2px 4px -2px oklch(20.5% 0.014 247 / 0.06);
+  --shadow-lg:
+    0 10px 15px -3px oklch(20.5% 0.014 247 / 0.1), 0 4px 6px -4px oklch(20.5% 0.014 247 / 0.06);
+  --shadow-overlay: 0 20px 40px -12px oklch(20.5% 0.014 247 / 0.25);
+}
+
+/* ── Layer 2: semantic roles. Dark theme. ────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: var(--palette-neutral-950);
+  --color-surface: var(--palette-neutral-900);
+  --color-surface-raised: var(--palette-neutral-800);
+  --color-surface-sunken: oklch(11% 0.016 247);
+  --color-surface-hover: var(--palette-neutral-800);
+  --color-surface-active: var(--palette-neutral-700);
+
+  --color-text: var(--palette-neutral-50);
+  --color-text-muted: var(--palette-neutral-400);
+  --color-text-subtle: var(--palette-neutral-500);
+  --color-text-inverted: var(--palette-neutral-950);
+  --color-text-on-accent: var(--palette-neutral-0);
+
+  --color-border: var(--palette-neutral-800);
+  --color-border-strong: var(--palette-neutral-700);
+  --color-border-focus: var(--palette-accent-500);
+
+  /* Lighter accents in dark: a 600-weight indigo on a near-black surface
+     fails contrast for text. */
+  --color-accent: var(--palette-accent-500);
+  --color-accent-hover: var(--palette-accent-300);
+  --color-accent-subtle: var(--palette-accent-900);
+  --color-accent-text: var(--palette-accent-300);
+
+  --color-success: var(--palette-success-500);
+  --color-success-subtle: var(--palette-success-900);
+  --color-success-text: oklch(78% 0.13 149);
+
+  --color-danger: var(--palette-danger-500);
+  --color-danger-hover: oklch(66% 0.2 27);
+  --color-danger-subtle: var(--palette-danger-900);
+  --color-danger-text: oklch(75% 0.15 27);
+
+  --color-warning: var(--palette-warning-500);
+  --color-warning-subtle: var(--palette-warning-900);
+  --color-warning-text: oklch(85% 0.13 75);
+
+  --color-info: var(--palette-info-500);
+  --color-info-subtle: var(--palette-info-900);
+  --color-info-text: oklch(76% 0.12 240);
+
+  --color-mastered: var(--palette-accent-500);
+  --color-mastered-subtle: var(--palette-accent-900);
+  --color-correct: var(--palette-success-500);
+  --color-wrong: var(--palette-danger-500);
+
+  /* Deck hues need more lightness to read against a dark surface. */
+  --palette-deck-1: oklch(68% 0.16 264);
+  --palette-deck-2: oklch(72% 0.15 149);
+  --palette-deck-3: oklch(68% 0.18 27);
+  --palette-deck-4: oklch(80% 0.15 70);
+  --palette-deck-5: oklch(70% 0.13 240);
+  --palette-deck-6: oklch(68% 0.18 320);
+  --palette-deck-7: oklch(74% 0.12 190);
+  --palette-deck-8: oklch(70% 0.012 247);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px oklch(0% 0 0 / 0.5), 0 2px 4px -2px oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px oklch(0% 0 0 / 0.55), 0 4px 6px -4px oklch(0% 0 0 / 0.4);
+  --shadow-overlay: 0 20px 40px -12px oklch(0% 0 0 / 0.7);
+}
+
+/* ── Layer 3: Tailwind theme mapping. ────────────────────────────────────────
+   Defining the --color-* namespace here REPLACES Tailwind's default palette
+   rather than extending it. That is deliberate and is the strongest guarantee
+   in the system: `bg-gray-100` does not fail lint, it simply does not compile.
+   The ESLint rule exists only to turn a silently missing style into a good
+   error message. */
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-surface-active: var(--color-surface-active);
+
+  --color-fg: var(--color-text);
+  --color-fg-muted: var(--color-text-muted);
+  --color-fg-subtle: var(--color-text-subtle);
+  --color-fg-inverted: var(--color-text-inverted);
+  --color-fg-on-accent: var(--color-text-on-accent);
+
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-focus: var(--color-border-focus);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-subtle: var(--color-accent-subtle);
+  --color-accent-text: var(--color-accent-text);
+
+  --color-success: var(--color-success);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-success-text: var(--color-success-text);
+
+  --color-danger: var(--color-danger);
+  --color-danger-hover: var(--color-danger-hover);
+  --color-danger-subtle: var(--color-danger-subtle);
+  --color-danger-text: var(--color-danger-text);
+
+  --color-warning: var(--color-warning);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-warning-text: var(--color-warning-text);
+
+  --color-info: var(--color-info);
+  --color-info-subtle: var(--color-info-subtle);
+  --color-info-text: var(--color-info-text);
+
+  --color-mastered: var(--color-mastered);
+  --color-mastered-subtle: var(--color-mastered-subtle);
+  --color-correct: var(--color-correct);
+  --color-wrong: var(--color-wrong);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --text-2xs: var(--text-2xs);
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-md: var(--text-md);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
+  --text-4xl: var(--text-4xl);
+
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  --spacing-3xs: var(--space-3xs);
+  --spacing-2xs: var(--space-2xs);
+  --spacing-xs: var(--space-xs);
+  --spacing-sm: var(--space-sm);
+  --spacing-md: var(--space-md);
+  --spacing-lg: var(--space-lg);
+  --spacing-xl: var(--space-xl);
+  --spacing-2xl: var(--space-2xl);
+  --spacing-3xl: var(--space-3xl);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-overlay: var(--shadow-overlay);
+
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+  --ease-spring: var(--ease-spring);
+}
+
+/* ── Base layer. ─────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    line-height: var(--leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* One focus treatment for the whole app. Components never restyle it. */
+  :focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  ::selection {
+    background-color: var(--color-accent-subtle);
+    color: var(--color-accent-text);
+  }
+
+  /* Headings inherit weight from their component; no global type scale here,
+     because every heading in the app is rendered by a primitive. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-tight);
+  }
+}
+
+@layer utilities {
+  /* Truncate to N lines. Used by deck descriptions and card previews. */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Respect the OS setting globally rather than per component. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
