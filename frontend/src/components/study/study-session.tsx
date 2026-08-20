@@ -96,15 +96,14 @@ export function StudySession({
 
   return (
     <div
-      className="mx-auto flex w-full max-w-(--measure-2xl) flex-col gap-lg"
+      className="gap-lg mx-auto flex w-full max-w-(--measure-2xl) flex-col"
       style={deckColor !== undefined ? deckAccentStyle(deckColor, deckId ?? 0) : undefined}
     >
-      <div className="flex flex-col gap-2xs">
-        <div className="flex items-center justify-between gap-md text-sm">
-          <span className="truncate text-fg-muted">{deckName ?? uz.stats.allDecks}</span>
-          <span className="tabular-nums text-fg-muted">{uz.study.progress(done, total)}</span>
+      <div className="gap-2xs flex flex-col">
+        <div className="gap-md flex items-center justify-between text-sm">
+          <span className="text-fg-muted truncate">{deckName ?? uz.stats.allDecks}</span>
+          <span className="text-fg-muted tabular-nums">{uz.study.progress(done, total)}</span>
         </div>
-        {/* Driven by the client queue, not the API's account-wide due_count. */}
         <Progress value={done} max={total} label={uz.study.progress(done, total)} />
       </div>
 
@@ -118,16 +117,15 @@ export function StudySession({
         {state.feedback ? <LevelChangeChip feedback={state.feedback} /> : null}
 
         <div
-          className="flex flex-col items-center justify-center gap-lg rounded-xl border border-border bg-surface p-xl text-center"
+          className="gap-lg border-border bg-surface p-xl flex flex-col items-center justify-center rounded-xl border text-center"
           style={{ minHeight: "var(--study-card-min-height)" }}
         >
-          {/* prompt/answer are resolved server-side for the deck direction. */}
-          <p className="text-2xl leading-tight font-medium text-fg">{currentCard.prompt}</p>
+          <p className="text-fg text-2xl leading-tight font-medium">{currentCard.prompt}</p>
 
           {state.phase === "revealed" ? (
             <>
-              <div className="h-px w-16 bg-border" />
-              <p className="text-xl text-fg-muted">{currentCard.answer}</p>
+              <div className="bg-border h-px w-16" />
+              <p className="text-fg-muted text-xl">{currentCard.answer}</p>
             </>
           ) : null}
         </div>
@@ -138,40 +136,36 @@ export function StudySession({
           {uz.study.reveal} <Kbd className="ml-xs">Space</Kbd>
         </Button>
       ) : (
-        <div className="grid grid-cols-2 gap-sm">
+        <div className="gap-sm grid grid-cols-2">
           <Button
             size="lg"
             variant="outline"
             onClick={() => session.answer(false)}
-            className="flex-col gap-3xs border-danger text-danger-text"
+            className="gap-3xs border-danger text-danger-text flex-col"
           >
             <span>{uz.study.wrong}</span>
-            {/* Visible before the click, not a tooltip: losing level 6 without
-                warning feels like a bug. */}
-            <span className="text-2xs font-normal opacity-80">{uz.study.wrongHint}</span>
           </Button>
           <Button
             size="lg"
             onClick={() => session.answer(true)}
-            className="flex-col gap-3xs bg-success"
+            className="gap-3xs bg-success flex-col"
           >
             <span>{uz.study.correct}</span>
-            <span className="text-2xs font-normal opacity-80">&nbsp;</span>
           </Button>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-center gap-md text-2xs text-fg-subtle">
-        <span className="flex items-center gap-3xs">
+      <div className="gap-md text-2xs text-fg-subtle flex flex-wrap items-center justify-center">
+        <span className="gap-3xs flex items-center">
           <Kbd>Space</Kbd> {uz.study.shortcutReveal}
         </span>
-        <span className="flex items-center gap-3xs">
+        <span className="gap-3xs flex items-center">
           <Kbd>1</Kbd> {uz.study.shortcutCorrect}
         </span>
-        <span className="flex items-center gap-3xs">
+        <span className="gap-3xs flex items-center">
           <Kbd>2</Kbd> {uz.study.shortcutWrong}
         </span>
-        <span className="flex items-center gap-3xs">
+        <span className="gap-3xs flex items-center">
           <Kbd>Esc</Kbd> {uz.study.shortcutExit}
         </span>
       </div>

@@ -130,7 +130,7 @@ export const uz = {
   study: {
     title: "Takrorlash",
     reveal: "Ko'rsatish",
-    correct: "Bilardim",
+    correct: "Bilaman",
     wrong: "Bilmadim",
     wrongHint: "1-darajaga qaytadi",
     resetCard: "1-darajaga qaytarish",
