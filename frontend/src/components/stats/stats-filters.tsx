@@ -5,10 +5,6 @@ import { Select } from "@/components/ui";
 import { uz } from "@/lib/i18n/uz";
 import type { Deck } from "@/types/api";
 
-export const DAY_RANGES = [7, 30, 90] as const;
-export type DayRange = (typeof DAY_RANGES)[number];
-export const DEFAULT_DAYS: DayRange = 30;
-
 const RANGE_LABELS: Record<DayRange, string> = {
   7: uz.stats.range7d,
   30: uz.stats.range30d,
