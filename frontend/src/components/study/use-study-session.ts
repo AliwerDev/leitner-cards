@@ -44,6 +44,7 @@ export type StudyState = {
 
 type Action =
   | { type: "reveal" }
+  | { type: "flip" }
   | { type: "answer"; wasCorrect: boolean }
   | { type: "clearFeedback" }
   | { type: "recordFailure"; cardId: number; wasCorrect: boolean }
@@ -58,6 +59,12 @@ function reducer(state: StudyState, action: Action): StudyState {
   switch (action.type) {
     case "reveal":
       return state.phase === "prompt" ? { ...state, phase: "revealed" } : state;
+
+    // Unlike reveal, a tap on the card turns it back over as well.
+    case "flip":
+      if (state.phase === "prompt") return { ...state, phase: "revealed" };
+      if (state.phase === "revealed") return { ...state, phase: "prompt" };
+      return state;
 
     case "answer": {
       const card = state.queue[state.index];
@@ -120,6 +127,8 @@ export function useStudySession(initialQueue: DueCard[]) {
 
   const reveal = useCallback(() => dispatch({ type: "reveal" }), []);
 
+  const flip = useCallback(() => dispatch({ type: "flip" }), []);
+
   const answer = useCallback(
     (wasCorrect: boolean) => {
       const card = state.queue[state.index];
@@ -171,6 +180,7 @@ export function useStudySession(initialQueue: DueCard[]) {
     wrongCount: state.answers.length - correctCount,
     masteredCount: state.answers.filter((a) => a.wasCorrect && a.levelAfter === 8).length,
     reveal,
+    flip,
     answer,
     retryFailed,
     clearFeedback,

@@ -6,10 +6,12 @@ use Yii;
 use app\models\Card;
 use app\models\Deck;
 use app\models\ReviewHistory;
+use app\modules\api\v1\models\CardBulkForm;
 use app\services\QuotaService;
 use app\services\ReviewService;
 use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
+use yii\web\ServerErrorHttpException;
 
 class CardController extends BaseApiController
 {
@@ -26,6 +28,7 @@ class CardController extends BaseApiController
                     'view'     => ['GET', 'HEAD'],
                     'progress' => ['GET', 'HEAD'],
                     'create'   => ['POST'],
+                    'bulk'     => ['POST'],
                     'update'   => ['PUT', 'PATCH'],
                     'delete'   => ['DELETE'],
                 ],
@@ -118,6 +121,70 @@ class CardController extends BaseApiController
         Yii::$app->response->statusCode = 201;
 
         return ['card' => $card->toArray()];
+    }
+
+    /**
+     * POST /api/v1/cards/bulk   body: {deckId, cards: [{front, back}, ...]}
+     *
+     * Every row lands or none does. A half-inserted paste would leave the user
+     * guessing which lines made it, so the whole batch runs in one transaction.
+     */
+    public function actionBulk(): array
+    {
+        $body = Yii::$app->request->getBodyParams();
+        $deckId = (int) ($body['deckId'] ?? 0);
+        $deck = Deck::findDeck($deckId);
+
+        $form = new CardBulkForm();
+        $form->load($body, '');
+        $form->deckId = $deck->id;
+
+        if (!$form->validate()) {
+            return $this->validationError($form->getErrors());
+        }
+
+        $rows = $form->rows();
+        $userId = (int) Yii::$app->user->id;
+        $quota = new QuotaService();
+        $remaining = $quota->remainingCards($userId, $deck->id);
+
+        // canAddCard() only answers "one more?", which would let a long paste
+        // past a nearly full deck. The whole batch is checked up front.
+        if ($remaining !== null && count($rows) > $remaining) {
+            return $this->validationError(
+                $quota->cardBulkLimitError($userId, count($rows), $remaining)
+            );
+        }
+
+        $transaction = Yii::$app->db->beginTransaction();
+
+        try {
+            $cards = [];
+
+            foreach ($rows as $row) {
+                $card = new Card();
+                $card->deck_id = $deck->id;
+                $card->front = $row['front'];
+                $card->back = $row['back'];
+
+                // The form already validated every row against Card::rules().
+                if (!$card->save(false)) {
+                    throw new ServerErrorHttpException('Kartalarni saqlab bo\'lmadi.');
+                }
+
+                $cards[] = $card->toArray();
+            }
+
+            $transaction->commit();
+        } catch (\Throwable $e) {
+            $transaction->rollBack();
+
+            throw $e;
+        }
+
+        Yii::$app->response->statusCode = 201;
+
+        return ['created' => count($cards), 'cards' => $cards];
     }
 
     /**

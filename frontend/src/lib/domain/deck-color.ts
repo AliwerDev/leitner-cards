@@ -39,10 +39,20 @@ export function deckColorToken(color: number | null | undefined, deckId: number)
  *
  * Every child using bg-accent / text-accent re-themes automatically, with no
  * prop threading - the payoff of the semantic-role indirection.
+ *
+ * The hover role is re-pointed as well. It is a separate token, so a button
+ * inside the subtree would otherwise fall back to the default accent as soon
+ * as the pointer touched it. The deck palette has no second shade per colour,
+ * so the darker step is mixed here instead.
  */
 export function deckAccentStyle(
   color: number | null | undefined,
   deckId: number,
 ): React.CSSProperties {
-  return { "--color-accent": deckColorToken(color, deckId) } as React.CSSProperties;
+  const token = deckColorToken(color, deckId);
+
+  return {
+    "--color-accent": token,
+    "--color-accent-hover": `color-mix(in oklab, ${token} 85%, black)`,
+  } as React.CSSProperties;
 }

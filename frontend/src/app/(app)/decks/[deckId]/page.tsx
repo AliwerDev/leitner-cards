@@ -1,8 +1,12 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { DeckHeader } from "@/components/decks/deck-header";
 import { CardList } from "@/components/cards/card-list";
 import { StatsStrip } from "@/components/stats/stats-strip";
+import { LevelBoard } from "@/components/stats/level-board";
+import { Button } from "@/components/ui";
+import { deckAccentStyle } from "@/lib/domain/deck-color";
 import { getDeckStats } from "@/lib/api/endpoints/decks";
 import { listCards } from "@/lib/api/endpoints/cards";
 import { getDueCount } from "@/lib/api/endpoints/reviews";
@@ -46,7 +50,26 @@ export default async function DeckDetailPage({ params, searchParams }: PageProps
     return (
       <div className="flex flex-col gap-xl">
         <DeckHeader deck={deck} dueCount={dueCount} />
-        <StatsStrip stats={stats} />
+
+        {/* Re-points --color-accent, so the filled levels and the button both
+            take the deck colour. */}
+        <div className="gap-md flex flex-col" style={deckAccentStyle(deck.color, deck.id)}>
+          <LevelBoard buckets={stats.by_level} />
+
+          {/* An empty deck has nothing to study, so the button only appears
+              once the deck holds at least one card. The count shows what is
+              due now, and falls back to the deck total when nothing is due. */}
+          {stats.total_cards > 0 ? (
+            <Link href={`/decks/${deckId}/study`} className="block">
+              <Button size="lg" fullWidth>
+                {uz.deck.studyCards(dueCount > 0 ? dueCount : stats.total_cards)}
+              </Button>
+            </Link>
+          ) : null}
+        </div>
+
+        <StatsStrip stats={stats} compact />
+
         <CardList
           deckId={deckId}
           cards={cards.items}

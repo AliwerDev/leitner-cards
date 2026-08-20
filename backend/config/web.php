@@ -124,6 +124,10 @@ $config = [
           ],
         ],
 
+        // Bulk create. Must precede the card UrlRule below: with pluralize on,
+        // that rule matches cards/<id> and would read "bulk" as an id.
+        "POST api/v1/cards/bulk" => "api/v1/card/bulk",
+
         // Card CRUD
         [
           "class" => yii\rest\UrlRule::class,

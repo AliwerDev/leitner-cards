@@ -6,6 +6,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { CardRow } from "./card-row";
 import { CardSearch } from "./card-search";
 import { CardFormDialog } from "./card-form-dialog";
+import { CardBulkDialog } from "./card-bulk-dialog";
 import { useSession } from "@/components/layout/session-provider";
 import { cardsLabel, isDeckFull, cardLimitMessage } from "@/lib/domain/quota";
 import { uz } from "@/lib/i18n/uz";
@@ -28,12 +29,19 @@ export function CardList({
 }) {
   const { quota } = useSession();
   const [createOpen, setCreateOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const full = isDeckFull(totalCount, quota);
 
   const addButton = (
     <Button onClick={() => setCreateOpen(true)} disabled={full}>
       {uz.card.create}
+    </Button>
+  );
+
+  const bulkButton = (
+    <Button variant="secondary" onClick={() => setBulkOpen(true)} disabled={full}>
+      {uz.card.bulkCreate}
     </Button>
   );
 
@@ -52,7 +60,14 @@ export function CardList({
           <h2 className="text-lg">{uz.card.title}</h2>
           <p className="text-sm text-fg-muted">{cardsLabel(totalCount, quota)}</p>
         </div>
-        {full ? <Tooltip content={cardLimitMessage(quota)}>{addButton}</Tooltip> : addButton}
+        <div className="flex items-center gap-xs">
+          {full ? (
+            <Tooltip content={cardLimitMessage(quota)}>{bulkButton}</Tooltip>
+          ) : (
+            bulkButton
+          )}
+          {full ? <Tooltip content={cardLimitMessage(quota)}>{addButton}</Tooltip> : addButton}
+        </div>
       </div>
 
       <CardSearch />
@@ -76,6 +91,7 @@ export function CardList({
       )}
 
       <CardFormDialog open={createOpen} onOpenChange={setCreateOpen} deckId={deckId} />
+      <CardBulkDialog open={bulkOpen} onOpenChange={setBulkOpen} deckId={deckId} />
     </div>
   );
 }

@@ -6,7 +6,8 @@
  * typographic one - the backend does the same and mismatched glyphs look wrong
  * side by side.
  *
- * Reuse the backend's vocabulary: deck, karta, daraja, takrorlash.
+ * Reuse the backend's vocabulary: karta, daraja, takrorlash. The keys keep the
+ * name "deck", because the API uses it. The Uzbek text says "to'plam".
  */
 export const uz = {
   app: {
@@ -15,7 +16,7 @@ export const uz = {
   },
 
   nav: {
-    decks: "Decklar",
+    decks: "To'plamlar",
     study: "Takrorlash",
     stats: "Statistika",
     profile: "Profil",
@@ -52,7 +53,7 @@ export const uz = {
     server: "Serverda xatolik. Birozdan so'ng qayta urinib ko'ring.",
     invalidCredentials: "Login yoki parol xato.",
     pageNotFound: "Sahifa topilmadi.",
-    deckNotFound: "Deck topilmadi.",
+    deckNotFound: "To'plam topilmadi.",
     cardNotFound: "Karta topilmadi.",
   },
 
@@ -85,10 +86,10 @@ export const uz = {
   },
 
   deck: {
-    title: "Decklar",
-    one: "Deck",
-    create: "Yangi deck",
-    edit: "Deckni tahrirlash",
+    title: "To'plamlar",
+    one: "To'plam",
+    create: "Yangi to'plam",
+    edit: "To'plamni tahrirlash",
     name: "Nomi",
     description: "Tavsif",
     color: "Rang",
@@ -97,12 +98,13 @@ export const uz = {
     directionBackToFront: "Orqa -> Old",
     directionHint: "Takrorlashda kartaning qaysi tomoni birinchi ko'rsatiladi.",
     cardCount: "karta",
-    empty: "Hali deck yo'q",
-    emptyHint: "Birinchi deckingizni yarating va kartalar qo'shing.",
-    deleteTitle: "Deckni o'chirish",
+    empty: "Hali to'plam yo'q",
+    emptyHint: "Birinchi to'plamingizni yarating va kartalar qo'shing.",
+    deleteTitle: "To'plamni o'chirish",
     deleteConfirm: (name: string) =>
-      `"${name}" deckini o'chirasizmi? Uning barcha kartalari va takrorlash tarixi ham o'chadi. Bu amalni qaytarib bo'lmaydi.`,
+      `"${name}" to'plamini o'chirasizmi? Uning barcha kartalari va takrorlash tarixi ham o'chadi. Bu amalni qaytarib bo'lmaydi.`,
     startStudy: "Boshlash",
+    studyCards: (n: number) => `Kartalarni o'rganish - ${n}`,
     dueCount: (n: number) => `${n} ta takrorlash kerak`,
     noDue: "Takrorlash kerak emas",
   },
@@ -114,17 +116,31 @@ export const uz = {
     edit: "Kartani tahrirlash",
     front: "Old tomoni",
     back: "Orqa tomoni",
-    empty: "Bu deckda karta yo'q",
+    empty: "Bu to'plamda karta yo'q",
     emptyHint: "Birinchi kartani qo'shing.",
     searchPlaceholder: "Kartalar ichidan qidirish...",
     searchEmpty: "Qidiruv bo'yicha karta topilmadi.",
     deleteTitle: "Kartani o'chirish",
     deleteConfirm: "Bu kartani o'chirasizmi? Uning takrorlash tarixi ham o'chadi.",
-    move: "Boshqa deckga ko'chirish",
+    move: "Boshqa to'plamga ko'chirish",
     moveTitle: "Kartani ko'chirish",
     history: "Takrorlash tarixi",
     historyEmpty: "Bu karta hali takrorlanmagan.",
     deckFull: "To'la",
+
+    bulkCreate: "Bir nechta qo'shish",
+    bulkTitle: "Bir nechta qo'shish",
+    bulkLabel: "Kartalar",
+    bulkHint: "Har bir qator - bitta karta. Old va orqa tomonni | yoki : bilan ajrating.",
+    bulkPlaceholder: "kitob | book\nolma : apple\nsuv | water",
+    bulkReady: (n: number) => `${n} ta karta tayyor`,
+    bulkInvalid: (n: number) => `${n} ta qator noto'g'ri`,
+    bulkLineErrors: (lines: string) => `Quyidagi qatorlarni to'g'rilang: ${lines}`,
+    bulkEmpty: "Hech bo'lmasa bitta to'g'ri qator kerak.",
+    bulkTooMany: (max: number) => `Bir vaqtda ko'pi bilan ${max} ta karta qo'shish mumkin.`,
+    bulkSuccess: (n: number) => `${n} ta karta qo'shildi.`,
+    bulkErrorNoSeparator: "Ajratuvchi topilmadi (| yoki :).",
+    bulkErrorEmptySide: "Old yoki orqa tomon bo'sh.",
   },
 
   study: {
@@ -138,7 +154,7 @@ export const uz = {
     exitConfirm: "Sessiyani tugatasizmi? Yuborilmagan javoblar bo'lishi mumkin.",
     empty: "Hozircha takrorlash kerak bo'lgan karta yo'q.",
     emptyHint: "Barcha kartalar takrorlangan. Keyinroq qaytib keling.",
-    deckEmpty: "Bu deckda karta yo'q",
+    deckEmpty: "Bu to'plamda karta yo'q",
     ruleTitle: "Leitner qoidasi",
     ruleBody:
       "To'g'ri javob kartani bir daraja oshiradi, xato javob esa 1-darajaga qaytaradi.",
@@ -159,7 +175,7 @@ export const uz = {
     summaryMastered: "Yangi o'zlashtirilgan",
     summaryAgain: "Yana takrorlash",
     summaryMoreLeft: "Yana kartalar bor",
-    backToDeck: "Deckka qaytish",
+    backToDeck: "To'plamga qaytish",
     unsavedAnswers: (n: number) => `${n} ta javob saqlanmadi`,
     resendAnswers: "Qayta yuborish",
   },
@@ -171,9 +187,15 @@ export const uz = {
     mastered: "O'zlashtirilgan",
     notStarted: "Boshlanmagan",
     byLevel: "Darajalar bo'yicha",
+    levelCount: (n: number) => `${n} ta daraja`,
+    cardsInLevel: (n: number) => `${n} ta karta`,
+    levelShort: (n: number) => `${n}-daraja`,
+    masteredShort: "O'zlashtirilgan",
+    intervalToday: "Bugun",
+    intervalDays: (n: number) => `${n} kunda`,
     reviewsToday: "Oxirgi 24 soatdagi takrorlash",
     accuracy7d: "7 kunlik aniqlik",
-    allDecks: "Barcha decklar",
+    allDecks: "Barcha to'plamlar",
     empty: "Hali statistika yo'q",
     emptyHint: "Birinchi takrorlash sessiyangizni boshlang.",
   },
@@ -184,19 +206,19 @@ export const uz = {
     memberSince: "Ro'yxatdan o'tgan",
     tier: "Tarif",
     quota: "Cheklovlar",
-    decksUsed: "Ishlatilgan decklar",
-    cardsPerDeck: "Har deckda karta",
+    decksUsed: "Ishlatilgan to'plamlar",
+    cardsPerDeck: "Har to'plamda karta",
     upgradeHint: "Premium hisobga o'tish uchun administrator bilan bog'laning.",
   },
 
   quota: {
-    decksLabel: (used: number, max: number) => `${used} / ${max} deck`,
-    decksUnlimited: "Cheklovsiz deck",
+    decksLabel: (used: number, max: number) => `${used} / ${max} to'plam`,
+    decksUnlimited: "Cheklovsiz to'plam",
     cardsLabel: (used: number, max: number) => `${used} / ${max} karta`,
     deckLimitReached: (max: number) =>
-      `Deck limiti tugadi (${max} ta). Premium hisobda cheklov yo'q.`,
+      `To'plam limiti tugadi (${max} ta). Premium hisobda cheklov yo'q.`,
     cardLimitReached: (max: number) =>
       `Karta limiti tugadi (${max} ta). Premium hisobda cheklov yo'q.`,
-    lastDeckSlot: "Oxirgi deck slot qoldi.",
+    lastDeckSlot: "Oxirgi to'plam slot qoldi.",
   },
 } as const;

@@ -112,6 +112,31 @@ class QuotaService
     }
 
     /**
+     * Per-field error for a rejected bulk create, shaped for validationError().
+     *
+     * Keyed on `cards` rather than `deckId` because the bulk form has no deck
+     * field on screen. Keeps the phrase "limiti tugadi" so that the client's
+     * isQuotaError() still lifts it to a form-level alert.
+     */
+    public function cardBulkLimitError(int $userId, int $requested, int $remaining): array
+    {
+        $max = $this->user($userId)->getType()->maxCardsPerDeck();
+
+        return [
+            'cards' => [
+                sprintf(
+                    'Karta limiti tugadi: %d ta karta qo\'shmoqchisiz, bu deckda %d ta joy qoldi '
+                        . '(oddiy foydalanuvchi uchun har deckda %d ta karta). '
+                        . 'Premium hisobda cheklov yo\'q.',
+                    $requested,
+                    $remaining,
+                    $max
+                ),
+            ],
+        ];
+    }
+
+    /**
      * Quota snapshot for the current account, for a settings or profile screen.
      */
     public function summary(int $userId): array

@@ -3,7 +3,13 @@ import "server-only";
 import { apiFetch, apiFetchPaginated } from "../client";
 import { pageQuery, type Paginated } from "../paginated";
 import { PAGE_SIZE } from "@/lib/domain/limits";
-import type { Card, CardProgressResponse, CardResponse, MessageResponse } from "@/types/api";
+import type {
+  Card,
+  CardBulkResponse,
+  CardProgressResponse,
+  CardResponse,
+  MessageResponse,
+} from "@/types/api";
 
 export const CARD_PAGE_SIZE = PAGE_SIZE;
 
@@ -45,6 +51,19 @@ export async function createCard(input: {
 }): Promise<Card> {
   const { card } = await apiFetch<CardResponse>("/cards", { method: "POST", body: input });
   return card;
+}
+
+/**
+ * Create many cards in one request.
+ *
+ * The backend wraps the insert in a transaction, so a rejected batch leaves the
+ * deck untouched - there is no partial result to reconcile here.
+ */
+export async function createCards(input: {
+  deckId: number;
+  cards: { front: string; back: string }[];
+}): Promise<CardBulkResponse> {
+  return apiFetch<CardBulkResponse>("/cards/bulk", { method: "POST", body: input });
 }
 
 export async function updateCard(

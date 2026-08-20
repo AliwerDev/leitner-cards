@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Kbd, Progress } from "@/components/ui";
 import { useStudySession } from "./use-study-session";
+import { StudyCard } from "./study-card";
 import { StudySummary } from "./study-summary";
 import { LevelChangeChip } from "./level-change-chip";
 import { useHotkeys } from "@/hooks/use-hotkeys";
@@ -65,8 +66,10 @@ export function StudySession({
 
   useHotkeys(
     {
-      " ": () => (state.phase === "prompt" ? session.reveal() : session.answer(true)),
-      Enter: () => (state.phase === "prompt" ? session.reveal() : session.answer(true)),
+      // Space only turns the card over, both ways. Answering needs 1 or 2, so a
+      // second press cannot submit a card the user is still reading.
+      " ": () => session.flip(),
+      Enter: () => session.flip(),
       "1": () => session.answer(true),
       ArrowLeft: () => session.answer(true),
       "2": () => session.answer(false),
@@ -96,7 +99,10 @@ export function StudySession({
 
   return (
     <div
-      className="gap-lg mx-auto flex w-full max-w-(--measure-2xl) flex-col"
+      // The session owns a full viewport column: the card takes the leftover
+      // space and the buttons sit at the bottom, instead of both bunching up
+      // under the progress bar.
+      className="gap-lg mx-auto flex h-[calc(100dvh-var(--topbar-height)-2*var(--space-xl))] w-full max-w-(--measure-2xl) flex-col"
       style={deckColor !== undefined ? deckAccentStyle(deckColor, deckId ?? 0) : undefined}
     >
       <div className="gap-2xs flex flex-col">
@@ -113,22 +119,15 @@ export function StudySession({
         </Alert>
       ) : null}
 
-      <div className="relative">
+      <div className="relative min-h-0 flex-1">
         {state.feedback ? <LevelChangeChip feedback={state.feedback} /> : null}
-
-        <div
-          className="gap-lg border-border bg-surface p-xl flex flex-col items-center justify-center rounded-xl border text-center"
-          style={{ minHeight: "var(--study-card-min-height)" }}
-        >
-          <p className="text-fg text-2xl leading-tight font-medium">{currentCard.prompt}</p>
-
-          {state.phase === "revealed" ? (
-            <>
-              <div className="bg-border h-px w-16" />
-              <p className="text-fg-muted text-xl">{currentCard.answer}</p>
-            </>
-          ) : null}
-        </div>
+        <StudyCard
+          key={currentCard.id}
+          prompt={currentCard.prompt}
+          answer={currentCard.answer}
+          flipped={state.phase === "revealed"}
+          onFlip={session.flip}
+        />
       </div>
 
       {state.phase === "prompt" ? (

@@ -175,6 +175,7 @@ export type SessionResponse = { user: User; quota: Quota };
 export type DeckResponse = { deck: Deck };
 export type DeckStatsResponse = { deck: Deck; stats: Stats };
 export type CardResponse = { card: Card };
+export type CardBulkResponse = { created: number; cards: Card[] };
 export type CardProgressResponse = {
   card: Card;
   progress: CardProgress;
