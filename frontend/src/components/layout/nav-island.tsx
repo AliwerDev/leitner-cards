@@ -5,7 +5,7 @@ import { Tooltip } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import { uz } from "@/lib/i18n/uz";
 import { NAV_ICON_STROKE, NAV_ITEMS, useActiveHref } from "./nav-links";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeCycle } from "./theme-cycle";
 import { UserMenu } from "./user-menu";
 
 /**
@@ -13,6 +13,10 @@ import { UserMenu } from "./user-menu";
  * with the page for one island height and then pins - the content below keeps
  * the full column width instead of paying a permanent side margin to a rail.
  * Below md the dock takes over and this renders nothing.
+ *
+ * The theme control is a single cycling button here rather than a three-button
+ * segmented group: the island is one row of chrome, and the segmented version
+ * put five controls in the space of two.
  */
 export function NavIsland({ dueCount, username }: { dueCount: number; username: string }) {
   const isActive = useActiveHref();
@@ -22,8 +26,8 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
       <nav
         aria-label={uz.app.name}
         className={cn(
-          "gap-3xs p-2xs border-border pointer-events-auto flex items-center rounded-full border",
-          "bg-surface/80 shadow-md backdrop-blur",
+          "gap-2xs p-xs pl-sm border-border pointer-events-auto flex items-center",
+          "bg-surface/85 shadow-md rounded-full border backdrop-blur",
         )}
       >
         <Tooltip content={uz.app.name}>
@@ -31,13 +35,15 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
             href="/decks"
             aria-label={uz.app.name}
             className={cn(
-              "bg-accent text-fg-on-accent ml-3xs flex size-7 items-center justify-center",
+              "bg-accent text-fg-on-accent flex size-7 flex-none items-center justify-center",
               "rounded-full text-xs font-semibold",
             )}
           >
             <span aria-hidden="true">L</span>
           </Link>
         </Tooltip>
+
+        <span className="bg-border mx-2xs h-5 w-px flex-none" aria-hidden="true" />
 
         {NAV_ITEMS.map((item) => {
           const active = isActive(item.href);
@@ -50,7 +56,7 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "gap-2xs px-sm py-2xs flex items-center rounded-full text-sm",
+                "gap-xs px-md py-xs flex items-center rounded-full text-sm whitespace-nowrap",
                 "transition-colors duration-(--duration-fast) ease-out",
                 active
                   ? "bg-surface-sunken text-fg font-medium"
@@ -63,8 +69,8 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
               {showBadge ? (
                 <span
                   className={cn(
-                    "bg-accent text-fg-on-accent px-3xs flex h-4 min-w-4 items-center",
-                    "text-2xs justify-center rounded-full leading-none font-semibold tabular-nums",
+                    "bg-accent text-fg-on-accent px-2xs ml-3xs flex h-5 min-w-5 items-center",
+                    "text-2xs justify-center rounded-full font-semibold tabular-nums",
                   )}
                 >
                   {dueCount}
@@ -74,9 +80,9 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
           );
         })}
 
-        <span className="bg-border mx-3xs h-5 w-px" aria-hidden="true" />
+        <span className="bg-border mx-2xs h-5 w-px flex-none" aria-hidden="true" />
 
-        <ThemeToggle />
+        <ThemeCycle />
         <UserMenu username={username} />
       </nav>
     </div>
