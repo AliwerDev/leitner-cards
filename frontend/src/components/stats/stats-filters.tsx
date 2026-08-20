@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Select } from "@/components/ui";
+import { DAY_RANGES, type DayRange } from "@/lib/domain/stats-range";
 import { uz } from "@/lib/i18n/uz";
 import type { Deck } from "@/types/api";
 
