@@ -26,9 +26,7 @@ function intervalHint(level: CardLevel): string {
 
 export function LevelBoard({ buckets }: { buckets: LevelBucket[] }) {
   return (
-    <ol className="gap-2xs flex items-end justify-between" aria-label={uz.stats.byLevel}>
-      {/* All eight buckets always render, zeros included - a gap would read as
-          missing data rather than an empty level. */}
+    <ol className="gap-md flex items-end justify-between" aria-label={uz.stats.byLevel}>
       {buckets.map((bucket) => {
         const mastered = bucket.level === CardLevel.Mastered;
         const filled = bucket.count > 0;
@@ -48,8 +46,10 @@ export function LevelBoard({ buckets }: { buckets: LevelBucket[] }) {
 
             <div
               className={cn(
-                "flex aspect-square w-full max-w-12 items-center justify-center rounded-lg text-sm font-medium",
-                filled ? "bg-accent text-fg-on-accent" : "bg-surface-sunken text-fg-muted",
+                "py-sm flex w-full items-center justify-center rounded-lg border text-sm font-medium",
+                filled
+                  ? "border-accent text-accent"
+                  : "border-border bg-surface-sunken text-fg-muted",
               )}
               title={`${label}${hint ? ` - ${hint}` : ""}`}
             >

@@ -48,17 +48,12 @@ export default async function DeckDetailPage({ params, searchParams }: PageProps
     ]);
 
     return (
-      <div className="flex flex-col gap-xl">
+      <div className="gap-xl flex flex-col" style={deckAccentStyle(deck.color, deck.id)}>
         <DeckHeader deck={deck} dueCount={dueCount} />
 
-        {/* Re-points --color-accent, so the filled levels and the button both
-            take the deck colour. */}
-        <div className="gap-md flex flex-col" style={deckAccentStyle(deck.color, deck.id)}>
+        <div className="gap-md flex flex-col">
           <LevelBoard buckets={stats.by_level} />
 
-          {/* An empty deck has nothing to study, so the button only appears
-              once the deck holds at least one card. The count shows what is
-              due now, and falls back to the deck total when nothing is due. */}
           {stats.total_cards > 0 ? (
             <Link href={`/decks/${deckId}/study`} className="block">
               <Button size="lg" fullWidth>

@@ -234,6 +234,18 @@ class ReviewService
             $counts[(int) $row['current_level']] = (int) $row['total'];
         }
 
+        $started = array_sum($counts);
+
+        /*
+         * A card gets its progress row on the first answer, so a new card has
+         * no row at all. It still sits on the first rung of the ladder, and it
+         * is due right away, so the histogram counts it there. Without this
+         * every level except the studied ones reads zero, and the buckets do
+         * not add up to total_cards.
+         */
+        $counts[CardLevel::first()->value] =
+            ($counts[CardLevel::first()->value] ?? 0) + max(0, $totalCards - $started);
+
         $byLevel = [];
 
         foreach (CardLevel::cases() as $level) {
@@ -244,7 +256,6 @@ class ReviewService
             ];
         }
 
-        $started = array_sum($counts);
         $mastered = $counts[CardLevel::Mastered->value] ?? 0;
 
         $dayStart = $at - 86400;
