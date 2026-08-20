@@ -4,19 +4,6 @@ import { levelIntervalDays } from "@/lib/domain/level";
 import { uz } from "@/lib/i18n/uz";
 import type { LevelBucket } from "@/types/api";
 
-/**
- * The level ladder: one box per level, with the number of cards above it.
- *
- * The histogram on the stats page compares levels against each other, so it
- * uses bar heights. This board answers a different question: which levels does
- * the deck have, and how full is each one. A box per level reads better for
- * that, and it stays legible when every count is zero.
- *
- * A level that holds cards takes the accent. An empty one stays muted, so the
- * filled levels are the ones the eye lands on. The accent follows the deck
- * colour, because the parent re-points --color-accent for this subtree.
- */
-
 function intervalHint(level: CardLevel): string {
   const days = levelIntervalDays(level);
   if (days === null) return "";
@@ -48,7 +35,7 @@ export function LevelBoard({ buckets }: { buckets: LevelBucket[] }) {
               className={cn(
                 "py-sm flex w-full items-center justify-center rounded-lg border text-sm font-medium",
                 filled
-                  ? "border-accent text-accent"
+                  ? "border-accent bg-accent/5 text-accent"
                   : "border-border bg-surface-sunken text-fg-muted",
               )}
               title={`${label}${hint ? ` - ${hint}` : ""}`}
