@@ -11,7 +11,6 @@ import { actionError, type ActionResult } from "@/lib/utils/result";
 import { zodFieldErrors } from "@/lib/validation/zod-errors";
 import { clearAuthCookies, writeAuthCookies, COOKIE } from "./cookies";
 
-
 export async function loginAction(
   _prev: ActionResult | null,
   formData: FormData,

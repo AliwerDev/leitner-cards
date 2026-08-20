@@ -13,15 +13,15 @@ export function RegisterForm() {
   const message = state?.ok === false ? state.message : undefined;
 
   return (
-    <div className="flex flex-col gap-lg">
-      <div className="flex flex-col gap-3xs">
+    <div className="gap-lg flex flex-col">
+      <div className="gap-3xs flex flex-col">
         <h1 className="text-2xl">{uz.auth.registerTitle}</h1>
-        <p className="text-sm text-fg-muted">{uz.auth.registerSubtitle}</p>
+        <p className="text-fg-muted text-sm">{uz.auth.registerSubtitle}</p>
       </div>
 
       {message ? <Alert tone="danger" title={message} /> : null}
 
-      <form action={formAction} className="flex flex-col gap-md">
+      <form action={formAction} className="gap-md flex flex-col">
         <Field
           label={uz.auth.username}
           error={fields.username}
@@ -53,9 +53,9 @@ export function RegisterForm() {
         </SubmitButton>
       </form>
 
-      <p className="text-center text-sm text-fg-muted">
+      <p className="text-fg-muted text-center text-sm">
         {uz.auth.hasAccount}{" "}
-        <Link href="/login" className="font-medium text-accent-text hover:underline">
+        <Link href="/login" className="text-accent-text font-medium hover:underline">
           {uz.auth.loginSubmit}
         </Link>
       </p>
