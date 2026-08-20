@@ -1,42 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils/cn";
+import { ChartPie, CirclePlay, Layers, type LucideIcon } from "lucide-react";
 import { uz } from "@/lib/i18n/uz";
 
-const LINKS = [
-  { href: "/decks", label: uz.nav.decks },
-  { href: "/study", label: uz.nav.study, showDue: true },
-  { href: "/stats", label: uz.nav.stats },
-] as const;
+/** Icon geometry is deliberately curve-led - circles and arcs rather than bars
+ *  and squares - so a 56px rail of glyphs does not read as spiky. */
+export const NAV_ITEMS: ReadonlyArray<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  showDue?: true;
+}> = [
+  { href: "/decks", label: uz.nav.decks, icon: Layers },
+  { href: "/study", label: uz.nav.study, icon: CirclePlay, showDue: true },
+  { href: "/stats", label: uz.nav.stats, icon: ChartPie },
+];
 
-export function NavLinks({ dueCount }: { dueCount: number }) {
+/** Stroke weight for every nav glyph. Lucide ships 2, which reads hard at rail
+ *  size; 1.75 keeps the line soft without going faint on a dark canvas. */
+export const NAV_ICON_STROKE = 1.75;
+
+/** Shared active test. A nested route keeps its section lit, so /decks/4 still
+ *  highlights Decks. */
+export function useActiveHref(): (href: string) => boolean {
   const pathname = usePathname();
-
-  return (
-    <nav className="flex items-center gap-3xs" aria-label={uz.app.name}>
-      {LINKS.map((link) => {
-        const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-2xs rounded-md px-sm py-2xs text-sm transition-colors",
-              active ? "bg-surface-sunken text-fg" : "text-fg-muted hover:bg-surface-hover",
-            )}
-          >
-            {link.label}
-            {"showDue" in link && link.showDue && dueCount > 0 ? (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-3xs text-2xs font-medium text-fg-on-accent">
-                {dueCount}
-              </span>
-            ) : null}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  return (href) => pathname === href || pathname.startsWith(`${href}/`);
 }

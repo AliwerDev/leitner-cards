@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Badge, Card, CardHeader, CardTitle, Progress, Separator } from "@/components/ui";
 import { LogoutButton } from "@/components/profile/logout-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { PageHeader } from "@/components/layout/page-header";
 import { requireSession } from "@/lib/auth/session";
 import { formatDate } from "@/lib/domain/format";
 import { decksLabel, usageTone } from "@/lib/domain/quota";
@@ -14,7 +15,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="gap-lg mx-auto flex w-full flex-col">
-      <h1 className="text-2xl">{uz.profile.title}</h1>
+      <PageHeader title={uz.profile.title} />
 
       <Card variant="outlined">
         <CardHeader>

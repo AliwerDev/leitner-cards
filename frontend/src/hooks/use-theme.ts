@@ -34,7 +34,7 @@ function apply(theme: Theme): ResolvedTheme {
  * markup identical between server and client render.
  */
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [resolved, setResolved] = useState<ResolvedTheme>("light");
 
   useEffect(() => {

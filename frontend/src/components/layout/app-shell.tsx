@@ -1,10 +1,13 @@
-import Link from "next/link";
-import { ThemeToggle } from "./theme-toggle";
-import { NavLinks } from "./nav-links";
-import { UserMenu } from "./user-menu";
-import { uz } from "@/lib/i18n/uz";
+import { NavRail } from "./nav-rail";
+import { NavDock } from "./nav-dock";
+import { cn } from "@/lib/utils/cn";
 import type { Session } from "@/lib/auth/session";
 
+/**
+ * App chrome: an icon rail from md up, a floating dock below it. There is no
+ * topbar - each page states its own title through PageHeader, which buys the
+ * study card back the vertical space the bar used to hold.
+ */
 export function AppShell({
   session,
   dueCount,
@@ -15,29 +18,20 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas">
-      <header className="sticky top-0 z-(--z-sticky) border-b border-border bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-md px-lg">
-          <Link href="/decks" className="flex items-center gap-xs">
-            <span
-              className="flex size-7 items-center justify-center rounded-md bg-accent text-xs font-semibold text-fg-on-accent"
-              aria-hidden="true"
-            >
-              L
-            </span>
-            <span className="font-semibold">{uz.app.name}</span>
-          </Link>
+    <div className="bg-canvas flex min-h-dvh">
+      <NavRail dueCount={dueCount} username={session.user.username} />
 
-          <NavLinks dueCount={dueCount} />
+      <main
+        className={cn(
+          "px-lg py-lg mx-auto w-full max-w-6xl flex-1",
+          // Clears the floating dock so the last card is never trapped under it.
+          "pb-[calc(var(--shell-chrome-v)+var(--space-lg))] md:pb-lg",
+        )}
+      >
+        {children}
+      </main>
 
-          <div className="ml-auto flex items-center gap-xs">
-            <ThemeToggle />
-            <UserMenu username={session.user.username} />
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-6xl flex-1 px-lg py-xl">{children}</main>
+      <NavDock dueCount={dueCount} />
     </div>
   );
 }

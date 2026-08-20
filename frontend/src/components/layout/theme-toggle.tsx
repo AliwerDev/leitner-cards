@@ -1,28 +1,46 @@
 "use client";
 
+import { Moon, Sun, SunMoon } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils/cn";
 import { uz } from "@/lib/i18n/uz";
 import type { Theme } from "@/types/ui";
 
-const OPTIONS: ReadonlyArray<{ value: Theme; label: string; icon: string }> = [
-  { value: "light", label: uz.nav.themeLight, icon: "☀" },
-  { value: "dark", label: uz.nav.themeDark, icon: "☾" },
-  { value: "system", label: uz.nav.themeSystem, icon: "◐" },
+const OPTIONS: ReadonlyArray<{
+  value: Theme;
+  label: string;
+  icon: typeof Sun;
+}> = [
+  { value: "light", label: uz.nav.themeLight, icon: Sun },
+  { value: "dark", label: uz.nav.themeDark, icon: Moon },
+  { value: "system", label: uz.nav.themeSystem, icon: SunMoon },
 ];
 
-/** Segmented light / dark / system control. */
-export function ThemeToggle() {
+/**
+ * Segmented light / dark / system control. The rail stacks it vertically to fit
+ * a 56px column; everywhere else it stays a horizontal row.
+ */
+export function ThemeToggle({
+  orientation = "horizontal",
+}: {
+  orientation?: "horizontal" | "vertical";
+}) {
   const { theme, setTheme } = useTheme();
+  const vertical = orientation === "vertical";
 
   return (
     <div
       role="radiogroup"
       aria-label={uz.nav.theme}
-      className="inline-flex gap-3xs rounded-full border border-border bg-surface-sunken p-3xs"
+      aria-orientation={vertical ? "vertical" : "horizontal"}
+      className={cn(
+        "gap-3xs p-3xs border-border bg-surface-sunken inline-flex rounded-full border",
+        vertical && "flex-col",
+      )}
     >
       {OPTIONS.map((option) => {
         const active = theme === option.value;
+        const Icon = option.icon;
         return (
           <button
             key={option.value}
@@ -33,14 +51,14 @@ export function ThemeToggle() {
             title={option.label}
             onClick={() => setTheme(option.value)}
             className={cn(
-              "flex size-7 items-center justify-center rounded-full text-sm transition-colors",
+              "flex size-8 items-center justify-center rounded-full transition-colors",
               "duration-(--duration-fast) ease-out",
               active
                 ? "bg-surface text-fg shadow-sm"
                 : "text-fg-subtle hover:bg-surface-hover hover:text-fg",
             )}
           >
-            <span aria-hidden="true">{option.icon}</span>
+            <Icon size={15} strokeWidth={1.75} aria-hidden="true" />
           </button>
         );
       })}

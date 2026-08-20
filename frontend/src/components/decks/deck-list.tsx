@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, Button, EmptyState, Tooltip } from "@/components/ui";
 import { DeckCard } from "./deck-card";
 import { DeckFormDialog } from "./deck-form-dialog";
+import { PageHeader } from "@/components/layout/page-header";
 import { useSession } from "@/components/layout/session-provider";
 import { canCreateDeck, decksLabel, deckLimitMessage, isLastDeckSlot } from "@/lib/domain/quota";
 import { uz } from "@/lib/i18n/uz";
@@ -29,18 +30,17 @@ export function DeckList({
 
   return (
     <div className="gap-lg flex flex-col">
-      <div className="gap-md flex flex-wrap items-center justify-between">
-        <div className="gap-3xs flex flex-col">
-          <h1 className="text-2xl">{uz.deck.title}</h1>
-          <p className="text-fg-muted text-sm">{decksLabel(quota)}</p>
-        </div>
-
-        {canCreate ? (
-          createButton
-        ) : (
-          <Tooltip content={deckLimitMessage(quota)}>{createButton}</Tooltip>
-        )}
-      </div>
+      <PageHeader
+        title={uz.deck.title}
+        subtitle={decksLabel(quota)}
+        action={
+          canCreate ? (
+            createButton
+          ) : (
+            <Tooltip content={deckLimitMessage(quota)}>{createButton}</Tooltip>
+          )
+        }
+      />
 
       {isLastDeckSlot(quota) ? <Alert tone="warning" title={uz.quota.lastDeckSlot} /> : null}
 

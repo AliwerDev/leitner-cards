@@ -3,6 +3,7 @@ import { Stat } from "@/components/ui";
 import { StatsStrip } from "@/components/stats/stats-strip";
 import { LevelHistogram } from "@/components/stats/level-histogram";
 import { DeckFilter } from "@/components/stats/deck-filter";
+import { PageHeader } from "@/components/layout/page-header";
 import { getStats } from "@/lib/api/endpoints/stats";
 import { listDecks } from "@/lib/api/endpoints/decks";
 import { formatAccuracy } from "@/lib/domain/format";
@@ -21,12 +22,14 @@ export default async function StatsPage({ searchParams }: PageProps) {
 
   return (
     <div className="flex flex-col gap-lg">
-      <div className="flex flex-wrap items-center justify-between gap-md">
-        <h1 className="text-2xl">{uz.stats.title}</h1>
-        <div className="w-56">
-          <DeckFilter decks={decks} selected={validDeckId} />
-        </div>
-      </div>
+      <PageHeader
+        title={uz.stats.title}
+        action={
+          <div className="w-56">
+            <DeckFilter decks={decks} selected={validDeckId} />
+          </div>
+        }
+      />
 
       <StatsStrip stats={stats} />
 

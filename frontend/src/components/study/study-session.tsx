@@ -101,8 +101,9 @@ export function StudySession({
     <div
       // The session owns a full viewport column: the card takes the leftover
       // space and the buttons sit at the bottom, instead of both bunching up
-      // under the progress bar.
-      className="gap-lg mx-auto flex h-[calc(100dvh-var(--topbar-height)-2*var(--space-xl))] w-full max-w-(--measure-2xl) flex-col"
+      // under the progress bar. --shell-chrome-v is the dock plus its clearance
+      // on a phone and zero beside the rail, so this fits either breakpoint.
+      className="gap-lg mx-auto flex h-[calc(100dvh-var(--shell-chrome-v)-2*var(--space-lg))] w-full max-w-(--measure-2xl) flex-col"
       style={deckColor !== undefined ? deckAccentStyle(deckColor, deckId ?? 0) : undefined}
     >
       <div className="gap-2xs flex flex-col">
