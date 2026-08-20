@@ -22,12 +22,7 @@ export function LevelBoard({ buckets }: { buckets: LevelBucket[] }) {
 
         return (
           <li key={bucket.level} className="gap-2xs flex flex-1 flex-col items-center">
-            <span
-              className={cn(
-                "text-xs tabular-nums",
-                filled ? "text-fg" : "text-fg-subtle",
-              )}
-            >
+            <span className={cn("text-xs tabular-nums", filled ? "text-fg" : "text-fg-subtle")}>
               {bucket.count}
             </span>
 
