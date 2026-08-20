@@ -9,6 +9,7 @@ use app\models\Deck;
 use app\models\ReviewHistory;
 use Yii;
 use yii\db\ActiveQuery;
+use yii\db\Expression;
 use yii\db\IntegrityException;
 use yii\db\Query;
 use yii\web\NotFoundHttpException;
@@ -286,6 +287,88 @@ class ReviewService
             'reviews_today' => $reviewsToday,
             'accuracy_7d' => $weekTotal > 0 ? round($weekCorrect / $weekTotal, 2) : null,
         ];
+    }
+
+    /** Widest window the daily series will report, to bound the query cost. */
+    private const DAILY_MAX_DAYS = 365;
+
+    /**
+     * Reviews per calendar day, oldest first, for charting a trend.
+     *
+     * Every day in the window is present, including the ones with no reviews:
+     * a chart that silently omits empty days draws a continuous line over a
+     * gap and overstates the streak. The zero fill happens here rather than in
+     * the client so that every caller gets the same shape.
+     *
+     * Days are UTC. The rolling windows in stats() are second arithmetic and do
+     * not align to a calendar, so the two do not have to agree exactly.
+     *
+     * @return list<array{day: string, reviews: int, correct: int, accuracy: float|null}>
+     */
+    public function dailySeries(int $userId, int $days = 30, ?int $deckId = null, ?int $at = null): array
+    {
+        $at ??= time();
+        $days = max(1, min($days, self::DAILY_MAX_DAYS));
+
+        if ($deckId !== null) {
+            $this->assertDeckOwned($userId, $deckId);
+        }
+
+        // Midnight UTC of the first day in the window, so the oldest bucket is
+        // a whole day rather than a partial one.
+        $todayStart = intdiv($at, 86400) * 86400;
+        $since = $todayStart - ($days - 1) * 86400;
+
+        $query = (new Query())
+            ->select([
+                'day' => "to_char(to_timestamp(rh.reviewed_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD')",
+                'reviews' => 'COUNT(*)',
+                'correct' => 'SUM(CASE WHEN rh.was_correct THEN 1 ELSE 0 END)',
+            ])
+            ->from(['rh' => ReviewHistory::tableName()])
+            // Matches idx-review_history-user_id-reviewed_at.
+            ->andWhere(['rh.user_id' => $userId])
+            ->andWhere(['>=', 'rh.reviewed_at', $since]);
+
+        // review_history carries no deck_id, so scoping has to reach the deck
+        // through the card.
+        if ($deckId !== null) {
+            $query
+                ->innerJoin(['c' => Card::tableName()], 'c.id = rh.card_id')
+                ->andWhere(['c.deck_id' => $deckId]);
+        }
+
+        $rows = $query
+            ->groupBy(new Expression("to_char(to_timestamp(rh.reviewed_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD')"))
+            ->all(Yii::$app->db);
+
+        $byDay = [];
+
+        foreach ($rows as $row) {
+            $byDay[$row['day']] = [
+                'reviews' => (int) $row['reviews'],
+                'correct' => (int) $row['correct'],
+            ];
+        }
+
+        $series = [];
+
+        for ($offset = 0; $offset < $days; $offset++) {
+            $day = gmdate('Y-m-d', $since + $offset * 86400);
+            $reviews = $byDay[$day]['reviews'] ?? 0;
+            $correct = $byDay[$day]['correct'] ?? 0;
+
+            $series[] = [
+                'day' => $day,
+                'reviews' => $reviews,
+                'correct' => $correct,
+                // Null rather than 0 on an empty day: nothing was answered, so
+                // there is no accuracy to plot and the line must break.
+                'accuracy' => $reviews > 0 ? round($correct / $reviews, 2) : null,
+            ];
+        }
+
+        return $series;
     }
 
     /**

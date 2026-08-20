@@ -145,6 +145,9 @@ $config = [
         "POST api/v1/reviews/reset" => "api/v1/review/reset",
         "POST api/v1/reviews" => "api/v1/review/create",
 
+        // The daily rule precedes the bare one so /stats/daily is not parsed
+        // as a parameter of /stats.
+        "GET  api/v1/stats/daily" => "api/v1/stats/daily",
         "GET  api/v1/stats" => "api/v1/stats/index",
       ],
     ],

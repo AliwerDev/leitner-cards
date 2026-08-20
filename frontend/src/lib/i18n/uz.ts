@@ -198,6 +198,17 @@ export const uz = {
     allDecks: "Barcha to'plamlar",
     empty: "Hali statistika yo'q",
     emptyHint: "Birinchi takrorlash sessiyangizni boshlang.",
+    reviewsTrend: "Kunlik takrorlash",
+    accuracyTrend: "Aniqlik dinamikasi",
+    lastNDays: (n: number) => `Oxirgi ${n} kun`,
+    noReviewsYet: "Bu davrda takrorlash bo'lmagan",
+    reviewsLabel: "Takrorlash",
+    correctLabel: "To'g'ri",
+    accuracyLabel: "Aniqlik",
+    range7d: "7 kun",
+    range30d: "30 kun",
+    range90d: "90 kun",
+    rangeLabel: "Davr",
   },
 
   profile: {

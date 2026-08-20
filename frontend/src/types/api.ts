@@ -157,6 +157,15 @@ export type Stats = {
   accuracy_7d: number | null;
 };
 
+export type DailyPoint = {
+  /** Calendar day, UTC, as YYYY-MM-DD. */
+  day: string;
+  reviews: number;
+  correct: number;
+  /** A ratio in 0..1, or null on a day with no reviews. */
+  accuracy: number | null;
+};
+
 /* ── Auth payloads ──────────────────────────────────────────────────────── */
 
 export type TokenPair = {
@@ -174,6 +183,7 @@ export type SessionResponse = { user: User; quota: Quota };
 
 export type DeckResponse = { deck: Deck };
 export type DeckStatsResponse = { deck: Deck; stats: Stats };
+export type DailyStatsResponse = { days: DailyPoint[] };
 export type CardResponse = { card: Card };
 export type CardBulkResponse = { created: number; cards: Card[] };
 export type CardProgressResponse = {

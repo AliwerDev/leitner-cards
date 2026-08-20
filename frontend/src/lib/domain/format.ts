@@ -67,6 +67,26 @@ export function formatCount(value: number): string {
   return new Intl.NumberFormat("uz-UZ").format(value);
 }
 
+const dayShortFormatter = new Intl.DateTimeFormat("uz-UZ", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
+/**
+ * A chart axis label for one day of the daily series.
+ *
+ * The series sends "YYYY-MM-DD", which the backend bucketed in UTC. Parsing it
+ * as UTC and formatting it back in UTC keeps the label on the same day the
+ * backend counted - a local-time reading shifts every label by a day for any
+ * user west of Greenwich.
+ */
+export function formatDayShort(day: string): string {
+  const parsed = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return day;
+  return dayShortFormatter.format(parsed);
+}
+
 /** "Takrorlash kerak" for a due card, otherwise when it comes back. */
 export function formatNextReview(nextReviewAt: number | null): string {
   if (nextReviewAt === null) return uz.study.mastered;

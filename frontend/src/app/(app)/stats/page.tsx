@@ -2,41 +2,53 @@ import type { Metadata } from "next";
 import { Stat } from "@/components/ui";
 import { StatsStrip } from "@/components/stats/stats-strip";
 import { LevelHistogram } from "@/components/stats/level-histogram";
-import { DeckFilter } from "@/components/stats/deck-filter";
+import { ReviewsTrend } from "@/components/stats/reviews-trend";
+import { AccuracyTrend } from "@/components/stats/accuracy-trend";
+import { DAY_RANGES, DEFAULT_DAYS, StatsFilters } from "@/components/stats/stats-filters";
 import { PageHeader } from "@/components/layout/page-header";
-import { getStats } from "@/lib/api/endpoints/stats";
+import { getDailyStats, getStats } from "@/lib/api/endpoints/stats";
 import { listDecks } from "@/lib/api/endpoints/decks";
 import { formatAccuracy } from "@/lib/domain/format";
 import { uz } from "@/lib/i18n/uz";
 
 export const metadata: Metadata = { title: uz.stats.title };
 
-type PageProps = { searchParams: Promise<{ deckId?: string }> };
+type PageProps = { searchParams: Promise<{ deckId?: string; days?: string }> };
+
+/** Only the ranges the filter offers, so a hand-typed value cannot widen it. */
+function parseDays(raw?: string): number {
+  const value = raw ? Number(raw) : NaN;
+  return DAY_RANGES.includes(value as (typeof DAY_RANGES)[number]) ? value : DEFAULT_DAYS;
+}
 
 export default async function StatsPage({ searchParams }: PageProps) {
-  const { deckId: deckIdRaw } = await searchParams;
+  const { deckId: deckIdRaw, days: daysRaw } = await searchParams;
   const deckId = deckIdRaw ? Number(deckIdRaw) : undefined;
   const validDeckId = deckId && Number.isInteger(deckId) && deckId > 0 ? deckId : undefined;
+  const days = parseDays(daysRaw);
 
-  const [stats, decks] = await Promise.all([getStats(validDeckId), listDecks()]);
+  const [stats, decks, daily] = await Promise.all([
+    getStats(validDeckId),
+    listDecks(),
+    getDailyStats(days, validDeckId),
+  ]);
 
   return (
-    <div className="flex flex-col gap-lg">
+    <div className="gap-lg flex flex-col">
       <PageHeader
         title={uz.stats.title}
-        action={
-          <div className="w-56">
-            <DeckFilter decks={decks} selected={validDeckId} />
-          </div>
-        }
+        action={<StatsFilters decks={decks} deckId={validDeckId} days={days} />}
       />
 
       <StatsStrip stats={stats} />
 
-      <div className="grid gap-md lg:grid-cols-[2fr_1fr]">
+      <ReviewsTrend days={daily.days} />
+
+      <div className="gap-md grid lg:grid-cols-[2fr_1fr]">
         <LevelHistogram buckets={stats.by_level} />
 
-        <div className="flex flex-col gap-md">
+        <div className="gap-md flex flex-col">
+          <AccuracyTrend days={daily.days} />
           {/* The window is a rolling 24 hours, not a calendar day. */}
           <Stat label={uz.stats.reviewsToday} value={stats.reviews_today} />
           {/* accuracy_7d is a 0..1 ratio, and null when there were no reviews. */}
