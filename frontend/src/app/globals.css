@@ -158,13 +158,13 @@
   --content-max: 72rem;
   --study-card-min-height: 12rem;
 
-  /* Shell chrome. The app uses a vertical icon rail from the md breakpoint up
-     and a floating bottom dock below it, so the chrome that steals vertical
-     space from a page differs per breakpoint. --shell-chrome-v is that height:
-     the dock and its clearance on a phone, zero next to the rail. Anything
-     sizing itself against the viewport reads this instead of hard-coding a
-     topbar that no longer exists. */
-  --rail-width: 3.5rem;
+  /* Shell chrome. A floating command island sits above the content from the md
+     breakpoint up, and a floating dock sits below it on smaller screens. Both
+     take vertical space, but different amounts, so --shell-chrome-v carries
+     whichever applies: the dock and its clearance on a phone, the island and
+     its clearance on desktop (see the md override below). Anything sizing
+     itself against the viewport reads this rather than hard-coding a bar. */
+  --island-height: 2.75rem;
   --dock-height: 3.25rem;
   --shell-chrome-v: calc(var(--dock-height) + var(--space-lg));
 
@@ -301,11 +301,12 @@
   --shadow-overlay: 0 20px 40px -12px oklch(0% 0 0 / 0.7);
 }
 
-/* The rail replaces the dock at md, and a rail costs no vertical space.
-   Kept out of the theme blocks above on purpose: this is layout, not color. */
+/* Kept out of the theme blocks above on purpose: this is layout, not color. */
 @media (width >= 48rem) {
   :root {
-    --shell-chrome-v: 0px;
+    /* The dock gives way to the island, which sits above the content and takes
+       its own height plus the gap it floats in. */
+    --shell-chrome-v: calc(var(--island-height) + var(--space-md));
   }
 }
 

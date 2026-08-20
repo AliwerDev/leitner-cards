@@ -29,7 +29,10 @@ export function PageHeader({
     <div className={cn("gap-md flex flex-wrap items-start justify-between", className)}>
       <div className="gap-3xs flex min-w-0 flex-col">
         {breadcrumb && breadcrumb.length > 0 ? (
-          <nav aria-label="breadcrumb" className="gap-2xs text-2xs text-fg-subtle flex items-center">
+          <nav
+            aria-label="breadcrumb"
+            className="gap-2xs text-2xs text-fg-subtle flex items-center"
+          >
             {breadcrumb.map((crumb) => (
               <span key={crumb.href} className="gap-2xs flex items-center">
                 <Link
@@ -45,9 +48,9 @@ export function PageHeader({
         ) : null}
 
         {typeof title === "string" ? (
-          <h1 className="truncate text-2xl">{title}</h1>
+          <h1 className="truncate text-xl">{title}</h1>
         ) : (
-          <h1 className="text-2xl">{title}</h1>
+          <h1 className="text-xl">{title}</h1>
         )}
 
         {subtitle ? <p className="text-fg-muted text-sm">{subtitle}</p> : null}

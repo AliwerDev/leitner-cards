@@ -5,7 +5,7 @@ import { ChartPie, CirclePlay, Layers, type LucideIcon } from "lucide-react";
 import { uz } from "@/lib/i18n/uz";
 
 /** Icon geometry is deliberately curve-led - circles and arcs rather than bars
- *  and squares - so a 56px rail of glyphs does not read as spiky. */
+ *  and squares - so a row of glyphs does not read as spiky. */
 export const NAV_ITEMS: ReadonlyArray<{
   href: string;
   label: string;
@@ -17,7 +17,7 @@ export const NAV_ITEMS: ReadonlyArray<{
   { href: "/stats", label: uz.nav.stats, icon: ChartPie },
 ];
 
-/** Stroke weight for every nav glyph. Lucide ships 2, which reads hard at rail
+/** Stroke weight for every nav glyph. Lucide ships 2, which reads hard at nav
  *  size; 1.75 keeps the line soft without going faint on a dark canvas. */
 export const NAV_ICON_STROKE = 1.75;
 

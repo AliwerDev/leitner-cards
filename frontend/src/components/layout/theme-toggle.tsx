@@ -16,27 +16,15 @@ const OPTIONS: ReadonlyArray<{
   { value: "system", label: uz.nav.themeSystem, icon: SunMoon },
 ];
 
-/**
- * Segmented light / dark / system control. The rail stacks it vertically to fit
- * a 56px column; everywhere else it stays a horizontal row.
- */
-export function ThemeToggle({
-  orientation = "horizontal",
-}: {
-  orientation?: "horizontal" | "vertical";
-}) {
+/** Segmented light / dark / system control. */
+export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const vertical = orientation === "vertical";
 
   return (
     <div
       role="radiogroup"
       aria-label={uz.nav.theme}
-      aria-orientation={vertical ? "vertical" : "horizontal"}
-      className={cn(
-        "gap-3xs p-3xs border-border bg-surface-sunken inline-flex rounded-full border",
-        vertical && "flex-col",
-      )}
+      className="gap-3xs p-3xs border-border bg-surface-sunken inline-flex rounded-full border"
     >
       {OPTIONS.map((option) => {
         const active = theme === option.value;
