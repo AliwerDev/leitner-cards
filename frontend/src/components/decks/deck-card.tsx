@@ -7,15 +7,18 @@ import type { Deck } from "@/types/api";
 
 export function DeckCard({ deck, dueCount }: { deck: Deck; dueCount?: number }) {
   return (
-    <Link href={`/decks/${deck.id}`} className="group block">
-      {/* Re-point the accent role for this subtree: every bg-accent inside
-          picks up the deck's own colour with no prop threading. */}
-      <Card variant="interactive" padding="none" style={deckAccentStyle(deck.color, deck.id)}>
-        <div className="h-1 rounded-t-lg bg-accent" aria-hidden="true" />
+    <Link href={`/decks/${deck.id}`} className="group block h-full">
+      <Card
+        variant="interactive"
+        padding="none"
+        className="flex h-full flex-col"
+        style={deckAccentStyle(deck.color, deck.id)}
+      >
+        <div className="bg-accent h-1 rounded-t-lg" aria-hidden="true" />
 
-        <div className="flex flex-col gap-sm p-md">
-          <div className="flex items-start justify-between gap-xs">
-            <h3 className="text-lg leading-tight font-semibold text-fg">{deck.name}</h3>
+        <div className="gap-sm p-md flex flex-1 flex-col">
+          <div className="gap-xs flex items-start justify-between">
+            <h3 className="text-fg text-lg leading-tight font-semibold">{deck.name}</h3>
             {dueCount !== undefined && dueCount > 0 ? (
               <Badge tone="accent" size="sm">
                 {dueCount}
@@ -24,12 +27,12 @@ export function DeckCard({ deck, dueCount }: { deck: Deck; dueCount?: number }) 
           </div>
 
           {deck.description ? (
-            <p className="line-clamp-2 text-sm text-fg-muted">{deck.description}</p>
+            <p className="text-fg-muted line-clamp-2 text-sm">{deck.description}</p>
           ) : null}
 
-          <div className="mt-auto flex items-center justify-between gap-xs pt-2xs">
+          <div className="gap-xs pt-2xs mt-auto flex items-center justify-between">
             <span className="text-2xs text-fg-subtle">{directionLabel(deck.direction)}</span>
-            <span className="text-2xs font-medium text-accent-text group-hover:underline">
+            <span className="text-2xs text-accent-text font-medium group-hover:underline">
               {dueCount && dueCount > 0 ? uz.deck.startStudy : uz.common.edit}
             </span>
           </div>
