@@ -14,7 +14,6 @@ export function DeckList({
   dueCounts,
 }: {
   decks: Deck[];
-  /** Keyed by deck id. Empty when there are too many decks to fan out. */
   dueCounts: Record<number, number>;
 }) {
   const { quota } = useSession();
@@ -29,15 +28,13 @@ export function DeckList({
   );
 
   return (
-    <div className="flex flex-col gap-lg">
-      <div className="flex flex-wrap items-center justify-between gap-md">
-        <div className="flex flex-col gap-3xs">
+    <div className="gap-lg flex flex-col">
+      <div className="gap-md flex flex-wrap items-center justify-between">
+        <div className="gap-3xs flex flex-col">
           <h1 className="text-2xl">{uz.deck.title}</h1>
-          <p className="text-sm text-fg-muted">{decksLabel(quota)}</p>
+          <p className="text-fg-muted text-sm">{decksLabel(quota)}</p>
         </div>
 
-        {/* Disabled with an explanation, not hidden: a vanished button reads
-            as a bug rather than a limit. */}
         {canCreate ? (
           createButton
         ) : (
@@ -55,7 +52,7 @@ export function DeckList({
           action={canCreate ? createButton : undefined}
         />
       ) : (
-        <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
+        <div className="gap-md grid sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
             <DeckCard key={deck.id} deck={deck} dueCount={dueCounts[deck.id]} />
           ))}

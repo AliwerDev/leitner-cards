@@ -34,7 +34,7 @@ export function ThemeToggle() {
             onClick={() => setTheme(option.value)}
             className={cn(
               "flex size-7 items-center justify-center rounded-full text-sm transition-colors",
-              "duration-[--duration-fast] ease-out",
+              "duration-(--duration-fast) ease-out",
               active
                 ? "bg-surface text-fg shadow-sm"
                 : "text-fg-subtle hover:bg-surface-hover hover:text-fg",

@@ -12,7 +12,7 @@ const VARIANTS = {
   raised: "bg-surface-raised shadow-md",
   outlined: "bg-surface border border-border",
   interactive:
-    "bg-surface border border-border transition-all duration-[--duration-fast] ease-out hover:border-border-strong hover:shadow-md",
+    "bg-surface border border-border transition-all duration-(--duration-fast) ease-out hover:border-border-strong hover:shadow-md",
 } as const;
 
 export type CardProps = React.HTMLAttributes<HTMLDivElement> & {

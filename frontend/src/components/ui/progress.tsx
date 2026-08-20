@@ -48,7 +48,7 @@ export function Progress({
       className={cn("w-full overflow-hidden rounded-full bg-surface-sunken", SIZES[size], className)}
     >
       <div
-        className={cn("h-full rounded-full transition-all duration-[--duration-normal] ease-out", TONES[tone])}
+        className={cn("h-full rounded-full transition-all duration-(--duration-normal) ease-out", TONES[tone])}
         style={{ width: `${percent}%` }}
       />
     </div>

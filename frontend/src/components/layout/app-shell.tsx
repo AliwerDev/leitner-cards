@@ -16,7 +16,7 @@ export function AppShell({
 }) {
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
-      <header className="sticky top-0 z-[--z-sticky] border-b border-border bg-surface/80 backdrop-blur">
+      <header className="sticky top-0 z-(--z-sticky) border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-md px-lg">
           <Link href="/decks" className="flex items-center gap-xs">
             <span

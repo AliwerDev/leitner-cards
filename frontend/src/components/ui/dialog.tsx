@@ -4,10 +4,13 @@ import { useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils/cn";
 import { uz } from "@/lib/i18n/uz";
 
+// Explicit measure tokens, not max-w-sm/md/lg: the theme defines --spacing-md
+// and friends, and Tailwind resolves max-w-* against the spacing namespace
+// first, so the t-shirt names would collapse the dialog to a ~1rem column.
 const SIZES = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
+  sm: "max-w-(--measure-sm)",
+  md: "max-w-(--measure-md)",
+  lg: "max-w-(--measure-lg)",
 } as const;
 
 export type DialogProps = {
@@ -66,9 +69,11 @@ export function Dialog({ open, onOpenChange, size = "md", ariaLabel, children }:
       onClick={handleClick}
       onClose={() => onOpenChange(false)}
       className={cn(
-        "w-[calc(100%-2rem)] rounded-lg border border-border bg-surface p-0 text-fg shadow-overlay",
+        // m-auto restores centering: Tailwind preflight zeroes the UA margin
+        // that centers a modal <dialog>, which pins it to the top-left corner.
+        "m-auto w-[calc(100%-2rem)] rounded-lg border border-border bg-surface p-0 text-fg shadow-overlay",
+        "max-h-[calc(100dvh-2rem)] overflow-y-auto",
         "backdrop:bg-canvas/60 backdrop:backdrop-blur-sm",
-        "open:animate-in",
         SIZES[size],
       )}
     >

@@ -11,6 +11,8 @@ export function LoginForm() {
   const [state, formAction] = useActionState(loginAction, null);
   const fields = state?.ok === false ? (state.fields ?? {}) : {};
   const message = state?.ok === false ? state.message : undefined;
+  // Refill from the echoed values; a re-render would otherwise blank the input.
+  const values = state?.ok === false ? (state.values ?? {}) : {};
 
   return (
     <div className="flex flex-col gap-lg">
@@ -25,7 +27,13 @@ export function LoginForm() {
         {/* The backend matches this against username OR email, so the label
             must not say "username". */}
         <Field label={uz.auth.loginField} error={fields.login} required>
-          <Input name="login" autoComplete="username" autoFocus />
+          <Input
+            name="login"
+            autoComplete="username"
+            autoFocus
+            defaultValue={values.login}
+            key={`login-${values.login ?? ""}`}
+          />
         </Field>
 
         <Field label={uz.auth.password} error={fields.password} required>

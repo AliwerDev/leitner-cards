@@ -11,6 +11,9 @@ export function RegisterForm() {
   const [state, formAction] = useActionState(registerAction, null);
   const fields = state?.ok === false ? (state.fields ?? {}) : {};
   const message = state?.ok === false ? state.message : undefined;
+  // useActionState re-renders on failure, which would blank the uncontrolled
+  // inputs. Refill them from the values the action echoed back.
+  const values = state?.ok === false ? (state.values ?? {}) : {};
 
   return (
     <div className="gap-lg flex flex-col">
@@ -28,11 +31,23 @@ export function RegisterForm() {
           hint={uz.auth.usernameHint}
           required
         >
-          <Input name="username" autoComplete="username" autoFocus />
+          <Input
+            name="username"
+            autoComplete="username"
+            autoFocus
+            defaultValue={values.username}
+            key={`username-${values.username ?? ""}`}
+          />
         </Field>
 
         <Field label={uz.auth.email} error={fields.email} required>
-          <Input name="email" type="email" autoComplete="email" />
+          <Input
+            name="email"
+            type="email"
+            autoComplete="email"
+            defaultValue={values.email}
+            key={`email-${values.email ?? ""}`}
+          />
         </Field>
 
         <Field

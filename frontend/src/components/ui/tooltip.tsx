@@ -43,7 +43,7 @@ export function Tooltip({ content, side = "top", className, children }: TooltipP
           id={id}
           role="tooltip"
           className={cn(
-            "absolute z-[--z-dropdown] w-max max-w-56 rounded-md bg-fg px-xs py-3xs",
+            "absolute z-(--z-dropdown) w-max max-w-56 rounded-md bg-fg px-xs py-3xs",
             "text-2xs text-fg-inverted shadow-lg",
             SIDES[side],
           )}

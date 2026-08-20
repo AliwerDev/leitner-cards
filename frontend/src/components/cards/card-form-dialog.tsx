@@ -49,6 +49,8 @@ export function CardFormDialog({
 
   const fields = state?.ok === false ? (state.fields ?? {}) : {};
   const message = state?.ok === false ? state.message : undefined;
+  // Refill after a failed submit; a re-render would blank the textareas.
+  const values = state?.ok === false ? (state.values ?? {}) : {};
 
   return (
     <Dialog
@@ -70,7 +72,7 @@ export function CardFormDialog({
               rows={3}
               maxLength={MAX_CARD_SIDE_LENGTH}
               showCount
-              defaultValue={card?.front}
+              defaultValue={values.front ?? card?.front}
               autoFocus
             />
           </Field>
@@ -81,7 +83,7 @@ export function CardFormDialog({
               rows={3}
               maxLength={MAX_CARD_SIDE_LENGTH}
               showCount
-              defaultValue={card?.back}
+              defaultValue={values.back ?? card?.back}
             />
           </Field>
         </DialogBody>

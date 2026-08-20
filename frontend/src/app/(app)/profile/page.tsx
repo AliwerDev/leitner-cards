@@ -10,11 +10,10 @@ import { uz } from "@/lib/i18n/uz";
 export const metadata: Metadata = { title: uz.profile.title };
 
 export default async function ProfilePage() {
-  // Already fetched by the layout; React.cache dedupes this call.
   const { user, quota } = await requireSession();
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-lg">
+    <div className="gap-lg mx-auto flex w-full flex-col">
       <h1 className="text-2xl">{uz.profile.title}</h1>
 
       <Card variant="outlined">
@@ -22,7 +21,7 @@ export default async function ProfilePage() {
           <CardTitle>{uz.profile.account}</CardTitle>
         </CardHeader>
 
-        <div className="mt-md flex flex-col gap-sm">
+        <div className="mt-md gap-sm flex flex-col">
           <Row label={uz.auth.username} value={user.username} />
           <Separator />
           <Row label={uz.auth.email} value={user.email} />
@@ -41,11 +40,11 @@ export default async function ProfilePage() {
           <CardTitle>{uz.profile.quota}</CardTitle>
         </CardHeader>
 
-        <div className="mt-md flex flex-col gap-md">
-          <div className="flex flex-col gap-2xs">
+        <div className="mt-md gap-md flex flex-col">
+          <div className="gap-2xs flex flex-col">
             <div className="flex items-center justify-between text-sm">
               <span className="text-fg-muted">{uz.profile.decksUsed}</span>
-              <span className="tabular-nums text-fg">{decksLabel(quota)}</span>
+              <span className="text-fg tabular-nums">{decksLabel(quota)}</span>
             </div>
             {quota.max_decks !== null ? (
               <Progress
@@ -65,14 +64,14 @@ export default async function ProfilePage() {
           {/* Tier changes are a manual DB update, so there is no upgrade
               button to offer. */}
           {!user.is_premium ? (
-            <p className="text-xs text-fg-subtle">{uz.profile.upgradeHint}</p>
+            <p className="text-fg-subtle text-xs">{uz.profile.upgradeHint}</p>
           ) : null}
         </div>
       </Card>
 
       <Card variant="outlined">
-        <div className="flex items-center justify-between gap-md">
-          <span className="text-sm text-fg-muted">{uz.nav.theme}</span>
+        <div className="gap-md flex items-center justify-between">
+          <span className="text-fg-muted text-sm">{uz.nav.theme}</span>
           <ThemeToggle />
         </div>
       </Card>
@@ -84,7 +83,7 @@ export default async function ProfilePage() {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-md text-sm">
+    <div className="gap-md flex items-center justify-between text-sm">
       <span className="text-fg-muted">{label}</span>
       <span className="text-fg">{value}</span>
     </div>

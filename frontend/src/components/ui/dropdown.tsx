@@ -57,7 +57,7 @@ export function Dropdown({ trigger, items, align = "end", ariaLabel }: DropdownP
         <div
           role="menu"
           className={cn(
-            "absolute top-full z-[--z-dropdown] mt-2xs flex min-w-40 flex-col rounded-md border border-border bg-surface-raised p-3xs shadow-lg",
+            "absolute top-full z-(--z-dropdown) mt-2xs flex min-w-40 flex-col rounded-md border border-border bg-surface-raised p-3xs shadow-lg",
             align === "end" ? "right-0" : "left-0",
           )}
         >

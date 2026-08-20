@@ -6,23 +6,27 @@ import { ApiError } from "@/lib/api/error";
 import { apiErrorMessage, apiFieldErrors, isQuotaError } from "@/lib/i18n/api-errors";
 import { uz } from "@/lib/i18n/uz";
 import { cardCreateSchema, cardUpdateSchema } from "@/lib/validation/card";
-import { actionError, actionOk, type ActionResult } from "@/lib/utils/result";
+import { actionError, actionOk, retainValues, type ActionResult } from "@/lib/utils/result";
 import { zodFieldErrors } from "@/lib/validation/zod-errors";
 import type { Card } from "@/types/api";
 
 
-function toActionError(error: unknown): ActionResult<never> {
+function toActionError(
+  error: unknown,
+  kept?: Record<string, string>,
+): ActionResult<never> {
   if (error instanceof ApiError) {
     if (isQuotaError(error)) {
       const messages = Object.values(error.fields ?? {}).flat();
-      return actionError(messages[0] ?? apiErrorMessage(error));
+      return actionError(messages[0] ?? apiErrorMessage(error), undefined, kept);
     }
     return actionError(
       error.isValidation ? undefined : apiErrorMessage(error),
       apiFieldErrors(error),
+      kept,
     );
   }
-  return actionError(uz.errors.unexpected);
+  return actionError(uz.errors.unexpected, undefined, kept);
 }
 
 export async function createCardAction(
@@ -30,20 +34,21 @@ export async function createCardAction(
   _prev: ActionResult<Card> | null,
   formData: FormData,
 ): Promise<ActionResult<Card>> {
+  const kept = retainValues(formData, ["front", "back"]);
   const parsed = cardCreateSchema.safeParse({
     deckId,
     front: formData.get("front"),
     back: formData.get("back"),
   });
 
-  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error));
+  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error), kept);
 
   try {
     const card = await cardsApi.createCard(parsed.data);
     revalidatePath(`/decks/${deckId}`);
     return actionOk(card);
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, kept);
   }
 }
 
@@ -53,19 +58,20 @@ export async function updateCardAction(
   _prev: ActionResult<Card> | null,
   formData: FormData,
 ): Promise<ActionResult<Card>> {
+  const kept = retainValues(formData, ["front", "back"]);
   const parsed = cardUpdateSchema.safeParse({
     front: formData.get("front"),
     back: formData.get("back"),
   });
 
-  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error));
+  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error), kept);
 
   try {
     const card = await cardsApi.updateCard(cardId, parsed.data);
     revalidatePath(`/decks/${deckId}`);
     return actionOk(card);
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, kept);
   }
 }
 

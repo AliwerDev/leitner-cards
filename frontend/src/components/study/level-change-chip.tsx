@@ -14,7 +14,7 @@ export function LevelChangeChip({ feedback }: { feedback: Feedback }) {
     <div
       role="status"
       className={cn(
-        "absolute -top-3 left-1/2 z-[--z-sticky] -translate-x-1/2",
+        "absolute -top-3 left-1/2 z-(--z-sticky) -translate-x-1/2",
         "flex items-center gap-2xs rounded-full px-sm py-3xs text-xs font-medium shadow-md",
         mastered
           ? "bg-mastered-subtle text-accent-text"

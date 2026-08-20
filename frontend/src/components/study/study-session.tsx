@@ -96,7 +96,7 @@ export function StudySession({
 
   return (
     <div
-      className="mx-auto flex w-full max-w-2xl flex-col gap-lg"
+      className="mx-auto flex w-full max-w-(--measure-2xl) flex-col gap-lg"
       style={deckColor !== undefined ? deckAccentStyle(deckColor, deckId ?? 0) : undefined}
     >
       <div className="flex flex-col gap-2xs">

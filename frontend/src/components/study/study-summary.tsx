@@ -37,7 +37,7 @@ export function StudySummary({
   const accuracy = Math.round((correctCount / total) * 100);
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-lg">
+    <div className="mx-auto flex w-full max-w-(--measure-2xl) flex-col gap-lg">
       <div className="flex flex-col gap-3xs text-center">
         <h1 className="text-2xl">{uz.study.summaryTitle}</h1>
         {queueWasFull ? <p className="text-sm text-fg-muted">{uz.study.summaryMoreLeft}</p> : null}

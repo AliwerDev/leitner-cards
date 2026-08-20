@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/api/error";
 import { apiErrorMessage, apiFieldErrors, isQuotaError } from "@/lib/i18n/api-errors";
 import { uz } from "@/lib/i18n/uz";
 import { deckCreateSchema, deckUpdateSchema } from "@/lib/validation/deck";
-import { actionError, actionOk, type ActionResult } from "@/lib/utils/result";
+import { actionError, actionOk, retainValues, type ActionResult } from "@/lib/utils/result";
 import { zodFieldErrors } from "@/lib/validation/zod-errors";
 import type { Deck } from "@/types/api";
 
@@ -15,24 +15,29 @@ import type { Deck } from "@/types/api";
  * Quota failures arrive as 422 on `name`, but they describe the account rather
  * than the field, so lift them to a form-level message.
  */
-function toActionError(error: unknown): ActionResult<never> {
+function toActionError(
+  error: unknown,
+  kept?: Record<string, string>,
+): ActionResult<never> {
   if (error instanceof ApiError) {
     if (isQuotaError(error)) {
       const messages = Object.values(error.fields ?? {}).flat();
-      return actionError(messages[0] ?? apiErrorMessage(error));
+      return actionError(messages[0] ?? apiErrorMessage(error), undefined, kept);
     }
     return actionError(
       error.isValidation ? undefined : apiErrorMessage(error),
       apiFieldErrors(error),
+      kept,
     );
   }
-  return actionError(uz.errors.unexpected);
+  return actionError(uz.errors.unexpected, undefined, kept);
 }
 
 export async function createDeckAction(
   _prev: ActionResult<Deck> | null,
   formData: FormData,
 ): Promise<ActionResult<Deck>> {
+  const kept = retainValues(formData, ["name", "description", "color", "direction"]);
   const colorRaw = formData.get("color");
   const parsed = deckCreateSchema.safeParse({
     name: formData.get("name"),
@@ -41,14 +46,14 @@ export async function createDeckAction(
     direction: Number(formData.get("direction") ?? 1),
   });
 
-  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error));
+  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error), kept);
 
   try {
     const deck = await decksApi.createDeck(parsed.data);
     revalidatePath("/decks");
     return actionOk(deck);
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, kept);
   }
 }
 
@@ -57,6 +62,7 @@ export async function updateDeckAction(
   _prev: ActionResult<Deck> | null,
   formData: FormData,
 ): Promise<ActionResult<Deck>> {
+  const kept = retainValues(formData, ["name", "description", "color", "direction"]);
   const colorRaw = formData.get("color");
   const parsed = deckUpdateSchema.safeParse({
     name: formData.get("name"),
@@ -65,7 +71,7 @@ export async function updateDeckAction(
     direction: Number(formData.get("direction") ?? 1),
   });
 
-  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error));
+  if (!parsed.success) return actionError(undefined, zodFieldErrors(parsed.error), kept);
 
   try {
     const deck = await decksApi.updateDeck(deckId, parsed.data);
@@ -73,7 +79,7 @@ export async function updateDeckAction(
     revalidatePath(`/decks/${deckId}`);
     return actionOk(deck);
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, kept);
   }
 }
 

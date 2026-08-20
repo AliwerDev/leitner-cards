@@ -32,7 +32,6 @@ export function DeckFormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Present when editing; absent when creating. */
   deck?: Deck;
 }) {
   const router = useRouter();
@@ -50,9 +49,14 @@ export function DeckFormDialog({
 
   const fields = state?.ok === false ? (state.fields ?? {}) : {};
   const message = state?.ok === false ? state.message : undefined;
+  const values = state?.ok === false ? (state.values ?? {}) : {};
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} ariaLabel={isEdit ? uz.deck.edit : uz.deck.create}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      ariaLabel={isEdit ? uz.deck.edit : uz.deck.create}
+    >
       <DialogHeader>
         <DialogTitle>{isEdit ? uz.deck.edit : uz.deck.create}</DialogTitle>
       </DialogHeader>
@@ -62,11 +66,20 @@ export function DeckFormDialog({
           {message ? <Alert tone="danger" title={message} /> : null}
 
           <Field label={uz.deck.name} error={fields.name} required>
-            <Input name="name" defaultValue={deck?.name} autoFocus maxLength={MAX_DECK_NAME_LENGTH} />
+            <Input
+              name="name"
+              defaultValue={values.name ?? deck?.name}
+              autoFocus
+              maxLength={MAX_DECK_NAME_LENGTH}
+            />
           </Field>
 
           <Field label={uz.deck.description} error={fields.description}>
-            <Textarea name="description" rows={3} defaultValue={deck?.description ?? ""} />
+            <Textarea
+              name="description"
+              rows={3}
+              defaultValue={values.description ?? deck?.description ?? ""}
+            />
           </Field>
 
           <Field label={uz.deck.direction} error={fields.direction} hint={uz.deck.directionHint}>

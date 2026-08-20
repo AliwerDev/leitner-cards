@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="pointer-events-none fixed right-md bottom-md z-[--z-toast] flex flex-col gap-xs"
+        className="pointer-events-none fixed right-md bottom-md z-(--z-toast) flex flex-col gap-xs"
         // Errors interrupt the screen reader; the rest wait for a pause.
         aria-live="polite"
       >

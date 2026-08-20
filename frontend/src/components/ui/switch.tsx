@@ -21,7 +21,7 @@ export function Switch({ checked, onCheckedChange, label, disabled, className }:
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         "inline-flex h-6 w-10 shrink-0 items-center rounded-full p-3xs",
-        "transition-colors duration-[--duration-fast] ease-out",
+        "transition-colors duration-(--duration-fast) ease-out",
         "disabled:cursor-not-allowed disabled:opacity-50",
         checked ? "bg-accent" : "bg-surface-active",
         className,
@@ -30,7 +30,7 @@ export function Switch({ checked, onCheckedChange, label, disabled, className }:
       <span
         className={cn(
           "size-4 rounded-full bg-surface shadow-sm",
-          "transition-transform duration-[--duration-fast] ease-out",
+          "transition-transform duration-(--duration-fast) ease-out",
           checked && "translate-x-4",
         )}
       />

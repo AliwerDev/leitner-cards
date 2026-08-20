@@ -91,6 +91,21 @@
   --space-2xl: 3rem;
   --space-3xl: 4rem;
 
+  /* Measures. Widths of content containers, NOT gaps between things.
+     These are a separate scale from --space-*: a t-shirt name means one thing
+     in the spacing namespace and another here, so max-w-md must not resolve to
+     a 1rem gap. See the --container-* mapping in @theme. */
+  --measure-xs: 20rem;
+  --measure-sm: 24rem;
+  --measure-md: 28rem;
+  --measure-lg: 32rem;
+  --measure-xl: 36rem;
+  --measure-2xl: 42rem;
+  --measure-3xl: 48rem;
+  --measure-4xl: 56rem;
+  --measure-5xl: 64rem;
+  --measure-6xl: 72rem;
+
   /* Radii. */
   --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
@@ -354,6 +369,21 @@
   --spacing-xl: var(--space-xl);
   --spacing-2xl: var(--space-2xl);
   --spacing-3xl: var(--space-3xl);
+
+  /* Container widths. Tailwind resolves the max-w and min-w utilities against
+     the spacing namespace BEFORE the container one, so declaring --spacing-md
+     above makes a bare max-w-md mean 1rem. Naming every container key here
+     takes that precedence back. */
+  --container-xs: var(--measure-xs);
+  --container-sm: var(--measure-sm);
+  --container-md: var(--measure-md);
+  --container-lg: var(--measure-lg);
+  --container-xl: var(--measure-xl);
+  --container-2xl: var(--measure-2xl);
+  --container-3xl: var(--measure-3xl);
+  --container-4xl: var(--measure-4xl);
+  --container-5xl: var(--measure-5xl);
+  --container-6xl: var(--measure-6xl);
 
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
