@@ -67,7 +67,7 @@ export function RuleSection() {
     <section className="py-2xl">
       <SectionTitle>{uz.landing.ruleTitle}</SectionTitle>
 
-      <Card padding="lg" className="gap-md mx-auto flex max-w-2xl flex-col">
+      <Card padding="lg" className="gap-md mx-auto flex max-w-(--measure-2xl) flex-col">
         <div className="gap-sm flex items-center justify-between">
           <span className="text-md text-fg">{uz.landing.ruleCorrect}</span>
           <ArrowRight size={16} className="text-fg-subtle flex-none" aria-hidden="true" />
