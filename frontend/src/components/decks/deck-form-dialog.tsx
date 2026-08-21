@@ -12,7 +12,6 @@ import {
   Field,
   Input,
   Select,
-  Textarea,
   Button,
 } from "@/components/ui";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -71,14 +70,6 @@ export function DeckFormDialog({
               defaultValue={values.name ?? deck?.name}
               autoFocus
               maxLength={MAX_DECK_NAME_LENGTH}
-            />
-          </Field>
-
-          <Field label={uz.deck.description} error={fields.description}>
-            <Textarea
-              name="description"
-              rows={3}
-              defaultValue={values.description ?? deck?.description ?? ""}
             />
           </Field>
 

@@ -10,12 +10,17 @@ import { canCreateDeck, decksLabel, deckLimitMessage, isLastDeckSlot } from "@/l
 import { uz } from "@/lib/i18n/uz";
 import type { Deck } from "@/types/api";
 
+export type DeckCounts = { total: number; due: number };
+
+/** Decks past the page's fanout limit arrive without counts. */
+const NO_COUNTS: DeckCounts = { total: 0, due: 0 };
+
 export function DeckList({
   decks,
-  dueCounts,
+  deckCounts,
 }: {
   decks: Deck[];
-  dueCounts: Record<number, number>;
+  deckCounts: Record<number, DeckCounts>;
 }) {
   const { quota } = useSession();
   const [createOpen, setCreateOpen] = useState(false);
@@ -53,9 +58,17 @@ export function DeckList({
         />
       ) : (
         <div className="gap-md grid sm:grid-cols-2 lg:grid-cols-3">
-          {decks.map((deck) => (
-            <DeckCard key={deck.id} deck={deck} dueCount={dueCounts[deck.id]} />
-          ))}
+          {decks.map((deck) => {
+            const counts = deckCounts[deck.id] ?? NO_COUNTS;
+            return (
+              <DeckCard
+                key={deck.id}
+                deck={deck}
+                totalCards={counts.total}
+                dueCount={counts.due}
+              />
+            );
+          })}
         </div>
       )}
 

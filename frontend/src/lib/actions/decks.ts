@@ -37,11 +37,10 @@ export async function createDeckAction(
   _prev: ActionResult<Deck> | null,
   formData: FormData,
 ): Promise<ActionResult<Deck>> {
-  const kept = retainValues(formData, ["name", "description", "color", "direction"]);
+  const kept = retainValues(formData, ["name", "color", "direction"]);
   const colorRaw = formData.get("color");
   const parsed = deckCreateSchema.safeParse({
     name: formData.get("name"),
-    description: formData.get("description") || null,
     color: colorRaw === null || colorRaw === "" ? null : Number(colorRaw),
     direction: Number(formData.get("direction") ?? 1),
   });
@@ -62,11 +61,10 @@ export async function updateDeckAction(
   _prev: ActionResult<Deck> | null,
   formData: FormData,
 ): Promise<ActionResult<Deck>> {
-  const kept = retainValues(formData, ["name", "description", "color", "direction"]);
+  const kept = retainValues(formData, ["name", "color", "direction"]);
   const colorRaw = formData.get("color");
   const parsed = deckUpdateSchema.safeParse({
     name: formData.get("name"),
-    description: formData.get("description") || null,
     color: colorRaw === null || colorRaw === "" ? null : Number(colorRaw),
     direction: Number(formData.get("direction") ?? 1),
   });

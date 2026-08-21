@@ -6,7 +6,6 @@ import type { Deck, DeckResponse, DeckStatsResponse, MessageResponse } from "@/t
 
 export type DeckInput = {
   name: string;
-  description?: string | null;
   color?: number | null;
   direction?: number;
 };

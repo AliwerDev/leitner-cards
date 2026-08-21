@@ -33,7 +33,6 @@ export function DeckHeader({ deck, dueCount }: { deck: Deck; dueCount: number })
             <span className="truncate">{deck.name}</span>
           </span>
         }
-        subtitle={deck.description ?? undefined}
         accessory={
           <div className="gap-xs mt-3xs flex items-center">
             {dueCount > 0 ? (
