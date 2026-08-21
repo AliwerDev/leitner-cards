@@ -22,17 +22,17 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
   const isActive = useActiveHref();
 
   return (
-    <div className="top-md z-(--z-sticky) pointer-events-none sticky hidden justify-center md:flex">
+    <div className="top-md pointer-events-none sticky z-(--z-sticky) hidden justify-center md:flex">
       <nav
         aria-label={uz.app.name}
         className={cn(
           "gap-2xs p-xs pl-sm border-border pointer-events-auto flex items-center",
-          "bg-surface-raised/85 shadow-md rounded-full border backdrop-blur",
+          "bg-surface-raised/85 rounded-full border shadow-md backdrop-blur",
         )}
       >
         <Tooltip content={uz.app.name}>
           <Link
-            href="/decks"
+            href="/"
             aria-label={uz.app.name}
             className={cn(
               "bg-accent text-fg-on-accent flex size-7 flex-none items-center justify-center",
