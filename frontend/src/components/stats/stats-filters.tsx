@@ -12,12 +12,6 @@ const RANGE_LABELS: Record<DayRange, string> = {
   90: uz.stats.range90d,
 };
 
-/**
- * Deck and time-range filters in one row above the charts.
- *
- * Both write to the query string, and each preserves the other - changing the
- * deck used to reset the range because it rebuilt the URL from scratch.
- */
 export function StatsFilters({
   decks,
   deckId,
@@ -43,7 +37,7 @@ export function StatsFilters({
 
   return (
     <div className="gap-xs flex flex-wrap items-center">
-      <div className="w-56">
+      <div className="md:w-56 flex-1">
         <Select
           aria-label={uz.deck.one}
           value={deckId ?? ""}
@@ -55,7 +49,7 @@ export function StatsFilters({
         />
       </div>
 
-      <div className="w-32">
+      <div className="md:w-32">
         <Select
           aria-label={uz.stats.rangeLabel}
           value={days}

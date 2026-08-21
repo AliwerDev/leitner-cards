@@ -3,11 +3,6 @@ import { cn } from "@/lib/utils/cn";
 
 type Crumb = { href: string; label: string };
 
-/**
- * The page title block. With the topbar gone, this is what tells the user where
- * they are, so every route renders one instead of hand-rolling the same stack of
- * heading and subtitle.
- */
 export function PageHeader({
   title,
   subtitle,

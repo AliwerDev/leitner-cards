@@ -44,9 +44,7 @@ export default async function StatsPage({ searchParams }: PageProps) {
 
         <div className="gap-md flex flex-col">
           <AccuracyTrend days={daily.days} />
-          {/* The window is a rolling 24 hours, not a calendar day. */}
           <Stat label={uz.stats.reviewsToday} value={stats.reviews_today} />
-          {/* accuracy_7d is a 0..1 ratio, and null when there were no reviews. */}
           <Stat
             label={uz.stats.accuracy7d}
             value={formatAccuracy(stats.accuracy_7d)}
