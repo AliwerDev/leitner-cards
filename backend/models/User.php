@@ -55,6 +55,15 @@ class User extends ActiveRecord implements IdentityInterface
         ];
     }
 
+    /**
+     * Fields for the account's own responses: /auth/me, register, login and
+     * refresh.
+     *
+     * Only ever serialized for the authenticated caller's own row, so role is
+     * safe here - the client needs it to decide whether to render the admin
+     * navigation. Nothing privileged about ANOTHER user belongs in this list;
+     * see adminFields() for that.
+     */
     public function fields(): array
     {
         return [
@@ -64,8 +73,71 @@ class User extends ActiveRecord implements IdentityInterface
             'type',
             'type_label' => fn(self $model) => $model->getType()->label(),
             'is_premium' => fn(self $model) => $model->getType() === UserType::Premium,
+            'role',
+            'role_label' => fn(self $model) => $model->getRole()->label(),
+            'is_admin' => fn(self $model) => $model->isAdmin(),
             'created_at',
         ];
+    }
+
+    /**
+     * The wider shape the admin panel needs: adds status and updated_at.
+     *
+     * Deliberately NOT extraFields(). That is driven by the ?expand= query
+     * parameter, so any authenticated caller could ask for it on their own
+     * /auth/me and read fields that are none of their business. A separate
+     * method means only code behind AdminAccessFilter can produce this shape.
+     */
+    public function adminFields(): array
+    {
+        return array_merge($this->fields(), [
+            'status',
+            'status_label' => fn(self $model) => $model->getStatus()->label(),
+            'is_active' => fn(self $model) => $model->isActive(),
+            'updated_at',
+        ]);
+    }
+
+    /**
+     * Serializes the admin shape.
+     *
+     * Built by hand rather than through toArray($this->adminFields()):
+     * ArrayableTrait::resolveFields() intersects the requested list against
+     * fields(), so status and updated_at would be dropped without a word.
+     *
+     * @param array<string,mixed> $extra computed values to append, such as counts
+     */
+    public function toAdminArray(array $extra = []): array
+    {
+        $result = [];
+
+        foreach ($this->adminFields() as $key => $definition) {
+            if (is_int($key)) {
+                $result[$definition] = $this->{$definition};
+
+                continue;
+            }
+
+            $result[$key] = $definition($this, $key);
+        }
+
+        return $result + $extra;
+    }
+
+    /**
+     * Administrators who can currently sign in.
+     *
+     * Used by the guards that refuse to remove the last one: a system with no
+     * usable administrator can only be repaired from the console.
+     */
+    public static function activeAdminCount(): int
+    {
+        return (int) static::find()
+            ->where([
+                'role' => UserRole::Admin->value,
+                'status' => UserStatus::ACTIVE->value,
+            ])
+            ->count();
     }
 
     public static function findIdentity($id): ?self
@@ -89,9 +161,14 @@ class User extends ActiveRecord implements IdentityInterface
             ->one();
     }
 
+    /**
+     * tryFrom rather than from: this now sits on a serialization path
+     * (adminFields), and an unexpected column value must not turn a list
+     * request into a 500. Matches getType() and getRole().
+     */
     public function getStatus(): UserStatus
     {
-        return UserStatus::from($this->status);
+        return UserStatus::tryFrom((int) $this->status) ?? UserStatus::INACTIVE;
     }
 
     public function setStatus(UserStatus $status): void

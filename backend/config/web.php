@@ -102,6 +102,14 @@ $config = [
           "class" => yii\log\FileTarget::class,
           "levels" => ["error", "warning"],
         ],
+        // Privilege changes are the only forensic record of who granted what.
+        // A separate target because the one above keeps error and warning only.
+        [
+          "class" => yii\log\FileTarget::class,
+          "levels" => ["info"],
+          "categories" => ["admin"],
+          "logFile" => "@runtime/logs/admin.log",
+        ],
       ],
     ],
     "db" => $db,
@@ -149,6 +157,28 @@ $config = [
         // as a parameter of /stats.
         "GET  api/v1/stats/daily" => "api/v1/stats/daily",
         "GET  api/v1/stats" => "api/v1/stats/index",
+
+        // ---- Admin ----
+        // Literal sub-paths first. yii\rest\UrlRule's {id} token is
+        // <id:\w[\w,]*>, which matches the word "stats", so a pluralized rule
+        // placed above would read /admin/users/7/stats as an id. Same gotcha as
+        // api/v1/cards/bulk and api/v1/reviews/due above.
+        "GET  api/v1/admin/stats" => "api/v1/admin-stats/index",
+        "GET  api/v1/admin/users/<id:\d+>/stats" => "api/v1/admin-user/stats",
+        "POST api/v1/admin/users/<id:\d+>/reset-password" => "api/v1/admin-user/reset-password",
+
+        // Admin user CRUD. pluralize is off because the prefix is already
+        // plural, and there is no create action: registration is the public
+        // path, so POST /admin/users correctly 404s.
+        [
+          "class" => yii\rest\UrlRule::class,
+          // Key is how the controller appears in the URL, value is the real
+          // controller id. Written the other way round the rule silently fails
+          // to rewrite and every request 404s.
+          "controller" => ["api/v1/admin/users" => "api/v1/admin-user"],
+          "pluralize" => false,
+          "only" => ["index", "view", "update", "delete"],
+        ],
       ],
     ],
   ],

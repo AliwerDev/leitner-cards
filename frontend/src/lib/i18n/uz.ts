@@ -20,6 +20,7 @@ export const uz = {
     study: "Takrorlash",
     stats: "Statistika",
     profile: "Profil",
+    admin: "Boshqaruv",
     logout: "Chiqish",
     theme: "Mavzu",
     themeLight: "Yorug'",
@@ -220,6 +221,99 @@ export const uz = {
     decksUsed: "Ishlatilgan to'plamlar",
     cardsPerDeck: "Har to'plamda karta",
     upgradeHint: "Premium hisobga o'tish uchun administrator bilan bog'laning.",
+  },
+
+  admin: {
+    title: "Boshqaruv",
+    dashboard: "Umumiy ko'rsatkichlar",
+    users: "Foydalanuvchilar",
+
+    // Dashboard
+    usersTotal: "Jami foydalanuvchi",
+    usersActive: "Faol hisoblar",
+    registered30d: "30 kunda qo'shilgan",
+    decksTotal: "Jami to'plam",
+    cardsTotal: "Jami karta",
+    cardsStarted: "O'rganish boshlangan",
+    emptyDecks: "Bo'sh to'plamlar",
+    reviews30d: "30 kunlik takrorlash",
+    accuracy30d: "30 kunlik aniqlik",
+    activeUsers30d: "30 kunda faol bo'lganlar",
+    byType: "Hisob turi bo'yicha",
+    byRole: "Rol bo'yicha",
+    byStatus: "Holat bo'yicha",
+
+    // List
+    searchPlaceholder: "Foydalanuvchi nomi yoki email",
+    filterType: "Hisob turi",
+    filterRole: "Rol",
+    filterStatus: "Holat",
+    filterAll: "Barchasi",
+    filterApply: "Qo'llash",
+    filterReset: "Tozalash",
+    usersCount: (n: number) => `${n} ta foydalanuvchi`,
+    empty: "Foydalanuvchi topilmadi",
+    emptyHint: "Qidiruv yoki filtrlarni o'zgartirib ko'ring.",
+    notFound: "Foydalanuvchi topilmadi.",
+    you: "Bu siz",
+
+    // Enum labels
+    typeRegular: "Oddiy",
+    typePremium: "Premium",
+    roleUser: "Foydalanuvchi",
+    roleAdmin: "Administrator",
+    statusActive: "Faol",
+    statusInactive: "Nofaol",
+    statusDeleted: "O'chirilgan",
+
+    // Detail
+    account: "Hisob ma'lumotlari",
+    manage: "Boshqarish",
+    learningStats: "O'rganish statistikasi",
+    decksCount: "To'plamlar",
+    cardsCount: "Kartalar",
+    reviewsCount: "Takrorlashlar",
+    activeSessions: "Faol seanslar",
+    createdAt: "Ro'yxatdan o'tgan",
+    updatedAt: "Oxirgi o'zgarish",
+    openUser: "Batafsil",
+
+    // Mutations
+    editTitle: "Foydalanuvchini tahrirlash",
+    editHint: "Faqat o'zgartirilgan maydonlar yuboriladi.",
+    type: "Hisob turi",
+    role: "Rol",
+    status: "Holat",
+    updated: "O'zgarishlar saqlandi.",
+    revokedSessions: (n: number) =>
+      n > 0 ? `${n} ta seans tugatildi.` : "Faol seans yo'q edi.",
+
+    block: "Bloklash",
+    unblock: "Blokdan chiqarish",
+    blockTitle: "Foydalanuvchini bloklash",
+    blockConfirm: (username: string) =>
+      `"${username}" hisobini bloklaysizmi? U keyingi so'rovdan boshlab tizimga kira olmaydi.`,
+    unblockTitle: "Blokdan chiqarish",
+    unblockConfirm: (username: string) => `"${username}" hisobini qayta faollashtirasizmi?`,
+
+    resetPassword: "Parolni tiklash",
+    resetPasswordTitle: "Yangi parol o'rnatish",
+    resetPasswordHint:
+      "Yangi parolni foydalanuvchiga o'zingiz yetkazing. U hech qayerda ko'rsatilmaydi.",
+    newPassword: "Yangi parol",
+    passwordReset: "Parol yangilandi.",
+
+    deleteUser: "Hisobni o'chirish",
+    deleteTitle: "Hisobni o'chirish",
+    // Soft delete: the backend sets status = Deleted and revokes the sessions.
+    // The decks, cards and history stay in place, so the copy must not promise
+    // otherwise.
+    deleteConfirm: (username: string) =>
+      `"${username}" hisobini o'chirasizmi? U tizimga kira olmaydi. Ma'lumotlari bazada saqlanib qoladi.`,
+    deleted: "Hisob o'chirildi.",
+
+    // Guards
+    selfHint: "O'z hisobingizga bu amalni qo'llay olmaysiz.",
   },
 
   quota: {

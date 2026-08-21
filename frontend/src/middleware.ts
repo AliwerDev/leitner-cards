@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE } from "@/lib/auth/cookies";
 import { refreshTokens } from "@/lib/auth/refresh";
+import { isAdminToken } from "@/lib/auth/admin-check";
 import { IS_PRODUCTION, TOKEN_REFRESH_SKEW_SECONDS } from "@/lib/api/config";
 
 /**
@@ -22,8 +23,46 @@ const PUBLIC_PATHS = ["/login", "/register"];
 
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
+/** Rewrite target for a denied /admin request. The page calls notFound(). */
+const DENIED_PATH = "/denied";
+
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function isAdminPath(pathname: string): boolean {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
+/**
+ * Deny a non-admin before the admin page renders.
+ *
+ * Scoped to /admin/*, so no other navigation pays for the check. Only a
+ * positively verified "denied" rewrites; "unknown" falls through to the layout
+ * gate in app/(app)/admin/layout.tsx, which has cookies() and a React.cache'd
+ * /auth/me. This is defence in depth, not the only check.
+ */
+async function guardAdmin(
+  request: NextRequest,
+  response: NextResponse,
+  accessToken: string | undefined,
+): Promise<NextResponse> {
+  if (!isAdminPath(request.nextUrl.pathname)) return response;
+  // Nothing to check with; the layout decides.
+  if (!accessToken) return response;
+
+  const outcome = await isAdminToken(accessToken);
+
+  if (outcome !== "denied") return response;
+
+  const denied = NextResponse.rewrite(new URL(DENIED_PATH, request.url));
+
+  // Carry over any freshly rotated cookies. Building the rewrite without them
+  // throws away the new token pair, so the NEXT request presents a revoked
+  // refresh token and the visitor is signed out for no visible reason.
+  for (const cookie of response.cookies.getAll()) denied.cookies.set(cookie);
+
+  return denied;
 }
 
 export async function middleware(request: NextRequest) {
@@ -54,7 +93,9 @@ export async function middleware(request: NextRequest) {
       ? expiresAt - now <= TOKEN_REFRESH_SKEW_SECONDS
       : true;
 
-  if (accessToken && !expiringSoon) return NextResponse.next();
+  if (accessToken && !expiringSoon) {
+    return guardAdmin(request, NextResponse.next(), accessToken);
+  }
 
   const outcome = await refreshTokens(refreshToken);
 
@@ -92,7 +133,8 @@ export async function middleware(request: NextRequest) {
     maxAge: REFRESH_MAX_AGE,
   });
 
-  return response;
+  // The token just minted, not the cookie, which is stale at this point.
+  return guardAdmin(request, response, tokens.access_token);
 }
 
 export const config = {

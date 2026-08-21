@@ -148,6 +148,13 @@ Barcha javoblar bir xil envelope shaklida:
 | POST | `/api/v1/reviews` | Bearer | Javobni yozish (`{cardId, wasCorrect}`) |
 | POST | `/api/v1/reviews/reset` | Bearer | Kartani 1-darajaga qaytarish |
 | GET | `/api/v1/stats` | Bearer | Umumiy statistika |
+| GET | `/api/v1/admin/users` | Admin | Foydalanuvchilar ro'yxati; `q`, `type`, `role`, `status`, `page`, `per-page` |
+| GET | `/api/v1/admin/users/{id}` | Admin | Bitta foydalanuvchi + kvota + hisoblagichlar |
+| PUT/PATCH | `/api/v1/admin/users/{id}` | Admin | `type`, `role`, `status` o'zgartirish (qismiy) |
+| POST | `/api/v1/admin/users/{id}/reset-password` | Admin | Parolni tiklash + barcha seanslarni tugatish |
+| DELETE | `/api/v1/admin/users/{id}` | Admin | Hisobni o'chirish (yumshoq: `status = 0`) |
+| GET | `/api/v1/admin/users/{id}/stats` | Admin | Bitta foydalanuvchining o'rganish statistikasi |
+| GET | `/api/v1/admin/stats` | Admin | Umumiy ko'rsatkichlar (dashboard) |
 
 ### Xatolar
 
@@ -195,9 +202,46 @@ Turni o'zgartirish uchun (hozircha faqat DB'dan):
 docker compose exec db psql -U leitner -d leitner   -c "UPDATE \"user\" SET type = 10 WHERE username = 'alisher';"
 ```
 
-`role` (`1` = foydalanuvchi, `10` = administrator) ham xuddi shunday DB'dan
-o'rnatiladi. Hozircha hech qanday tekshiruv uni o'qimaydi — ustun va enum
-kelajak uchun tayyor turadi. `role` API javoblarida ko'rinmaydi.
+### Administrator
+
+`role` (`1` = foydalanuvchi, `10` = administrator) `/api/v1/auth/me` javobida
+`role`, `role_label` va `is_admin` sifatida qaytadi. Faqat so'rov yuborgan
+hisobning o'zining roli ko'rinadi — boshqa foydalanuvchilarning `status` va
+`role` maydonlari faqat admin endpointlarida beriladi.
+
+Birinchi administratorni konsoldan tayinlang:
+
+```bash
+docker compose exec php php yii admin/promote alisher
+docker compose exec php php yii admin/list
+docker compose exec php php yii admin/demote alisher
+```
+
+`admin/demote` oxirgi faol administratorni olib tashlashdan bosh tortadi —
+administratorsiz tizimni faqat SQL bilan tuzatish mumkin bo'lardi.
+
+Rol JWT ichida saqlanmaydi. `findIdentity()` har so'rovda bazadan o'qiydi,
+shuning uchun rol o'zgarishi keyingi so'rovdan kuchga kiradi va qayta kirish
+talab qilinmaydi.
+
+**Xavfsizlik cheklovlari.** Admin o'zining rolini olib tashlay olmaydi, o'z
+hisobini bloklay yoki o'chira olmaydi, va tizimdagi oxirgi faol administratorni
+yo'qotib bo'lmaydi. Har uchtasi ham **422** qaytaradi.
+
+Hisobni bloklash va o'chirish yumshoq amal: `status` o'zgaradi, ma'lumot
+o'chmaydi. `user` jadvaliga ishora qiluvchi har bir tashqi kalit
+`ON DELETE CASCADE` bo'lgani uchun haqiqiy `DELETE` foydalanuvchining barcha
+decklarini, kartalarini va takrorlash tarixini yo'q qilardi — bu esa dashboard
+raqamlarini retroaktiv o'zgartirardi. Ikkala amal ham refresh tokenlarni bekor
+qiladi.
+
+Rol va holat o'zgarishlari `backend/runtime/logs/admin.log` ga yoziladi: kim,
+kimga, nimani o'zgartirgani. Bu tizimdagi yagona audit izi.
+
+**Frontend.** `/admin` sahifalari faqat administratorga ko'rinadi. Boshqa
+hisoblar **404** oladi (403 emas), shuning uchun sahifaning borligi ham
+oshkor bo'lmaydi. Havola faqat administratorga, foydalanuvchi menyusida
+ko'rsatiladi.
 
 ### Leitner mexanizmi
 

@@ -37,6 +37,27 @@ export const UserType = {
 } as const;
 export type UserType = (typeof UserType)[keyof typeof UserType];
 
+export const UserRole = {
+  User: 1,
+  Admin: 10,
+} as const;
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+/**
+ * Account status. Mirrors backend/enums/UserStatus.php.
+ *
+ * Three states, not a boolean: Deleted is what DELETE /admin/users/{id}
+ * produces (a soft delete), and a blocked account is Inactive. The backend's
+ * findIdentity() resolves only Active, so a status change ends the account's
+ * access on its next request.
+ */
+export const UserStatus = {
+  Deleted: 0,
+  Inactive: 5,
+  Active: 10,
+} as const;
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
+
 /* ── Entities ───────────────────────────────────────────────────────────── */
 
 /** All timestamps across the API are unix SECONDS, not milliseconds. */
@@ -49,6 +70,10 @@ export type User = {
   type: UserType;
   type_label: string;
   is_premium: boolean;
+  /** Added to User::fields() so the client knows whether to offer the panel. */
+  role: UserRole;
+  role_label: string;
+  is_admin: boolean;
   created_at: UnixSeconds;
 };
 
@@ -164,6 +189,91 @@ export type DailyPoint = {
   correct: number;
   /** A ratio in 0..1, or null on a day with no reviews. */
   accuracy: number | null;
+};
+
+/* ── Admin ──────────────────────────────────────────────
+   Only the /admin endpoints return these. AdminUser is User plus the columns
+   User::fields() withholds from a normal caller. */
+
+export type AdminUser = User & {
+  status: UserStatus;
+  status_label: string;
+  is_active: boolean;
+  updated_at: UnixSeconds;
+};
+
+/** Per-user counters on the admin detail screen. */
+export type AdminUserCounts = {
+  decks: number;
+  cards: number;
+  reviews: number;
+  /** Unrevoked, unexpired refresh tokens. */
+  active_sessions: number;
+};
+
+/**
+ * One histogram bucket.
+ *
+ * A list rather than a value-keyed map: PHP serializes an empty int-keyed array
+ * as [] and a populated one as an object, so a map would change JSON type with
+ * the data. The label is the backend's Uzbek text.
+ */
+export type AdminBucket = {
+  value: number;
+  label: string;
+  count: number;
+};
+
+export type AdminDayPoint = DailyPoint & {
+  /** Distinct users who reviewed that day. */
+  users: number;
+};
+
+export type AdminStats = {
+  users: {
+    total: number;
+    active: number;
+    registered_30d: number;
+    by_type: AdminBucket[];
+    by_role: AdminBucket[];
+    by_status: AdminBucket[];
+  };
+  content: {
+    decks: number;
+    cards: number;
+    cards_started: number;
+    empty_decks: number;
+  };
+  reviews: {
+    days: number;
+    total_30d: number;
+    /** A ratio in 0..1, or null when nothing was reviewed. */
+    accuracy_30d: number | null;
+    active_users_30d: number;
+    series: AdminDayPoint[];
+  };
+  generated_at: UnixSeconds;
+};
+
+export type AdminUserListResponse = AdminUser[];
+export type AdminUserResponse = {
+  user: AdminUser;
+  revoked_sessions: number;
+  message: string;
+};
+export type AdminUserDetailResponse = {
+  user: AdminUser;
+  quota: Quota;
+  counts: AdminUserCounts;
+};
+export type AdminUserStatsResponse = {
+  user: AdminUser;
+  stats: Stats;
+  days: DailyPoint[];
+};
+export type AdminPasswordResponse = {
+  revoked_sessions: number;
+  message: string;
 };
 
 /* ── Auth payloads ──────────────────────────────────────────────────────── */

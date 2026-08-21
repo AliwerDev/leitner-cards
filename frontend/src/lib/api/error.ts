@@ -64,6 +64,9 @@ export class ApiError extends Error {
   get isNotFound() {
     return this.code === "not_found";
   }
+  get isForbidden() {
+    return this.code === "forbidden";
+  }
   get isRateLimited() {
     return this.code === "rate_limited";
   }
