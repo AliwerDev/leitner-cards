@@ -19,7 +19,10 @@ import { IS_PRODUCTION, TOKEN_REFRESH_SKEW_SECONDS } from "@/lib/api/config";
  * requireSession() is the gate.
  */
 
-const PUBLIC_PATHS = ["/login", "/register"];
+/** The marketing page. Public, and the one public path a signed-in visitor keeps. */
+const LANDING_PATH = "/";
+
+const PUBLIC_PATHS = [LANDING_PATH, "/login", "/register"];
 
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -82,7 +85,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // Signed in and heading for the login page: send them to the app instead.
-  if (isPublic(pathname)) {
+  // The landing page is the exception - it is shareable, and it swaps its own
+  // calls to action for a signed-in visitor rather than needing a redirect.
+  if (isPublic(pathname) && pathname !== LANDING_PATH) {
     return NextResponse.redirect(new URL("/decks", request.url));
   }
 

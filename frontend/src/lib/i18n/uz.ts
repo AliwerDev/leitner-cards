@@ -11,8 +11,8 @@
  */
 export const uz = {
   app: {
-    name: "Leitner",
-    tagline: "Kartalar bilan yodlash tizimi",
+    name: "Magic Memorizer",
+    tagline: "Yodlaganingiz esingizda qoladi",
   },
 
   nav: {
@@ -327,5 +327,61 @@ export const uz = {
     cardLimitReached: (max: number) =>
       `Karta limiti tugadi (${max} ta). Premium hisobda cheklov yo'q.`,
     lastDeckSlot: "Oxirgi to'plam slot qoldi.",
+  },
+  landing: {
+    // Hero. The promise is the scheduling decision, not the flashcards - every
+    // competitor has flashcards.
+    heroTitle: "Bugun nimani takrorlashni tizim hal qiladi",
+    heroBody:
+      "Kartalarni yozing va javob bering. Qaysi kartani qachon qaytarishni Magic Memorizer o'zi hisoblaydi, shunda yodlaganingiz esingizdan chiqmaydi.",
+    ctaPrimary: "Bepul boshlash",
+    ctaSecondary: "Kirish",
+    ctaSignedIn: "Ilovaga o'tish",
+
+    // Visual caption.
+    visualCaption: "Har bir daraja - keyingi takrorlashgacha qancha kun",
+    visualCardLabel: "Savol",
+    visualCardFront: "ephemeral",
+    visualToday: "Bugun",
+
+    // Problem -> solution. Written in the user's own words, not feature names.
+    problemsTitle: "Tanish holat",
+    problems: [
+      {
+        pain: "Nimani takrorlashni bilmayman",
+        fix: "Tizim har kuni aynan shu kartalar ro'yxatini tayyorlab qo'yadi.",
+      },
+      {
+        pain: "Yodlaganim bir haftada esimdan chiqadi",
+        fix: "Takrorlash aynan unutish boshlanadigan payt rejalashtiriladi.",
+      },
+      {
+        pain: "Qayerda to'xtaganimni unutaman",
+        fix: "Har bir kartaning darajasi saqlanadi. Istagan payt davom ettirasiz.",
+      },
+    ],
+
+    // Three steps.
+    stepsTitle: "Qanday ishlaydi",
+    steps: [
+      { title: "Karta yarating", body: "Savol va javobni yozing. To'plamlarga ajrating." },
+      { title: "Javob bering", body: "Kartani ko'rib, bilgan yoki bilmaganingizni belgilang." },
+      { title: "Tizim rejalashtiradi", body: "Keyingi takrorlash sanasi avtomatik qo'yiladi." },
+    ],
+
+    // The mechanic, stated plainly. Same wording as the in-app rule alert.
+    ruleTitle: "Qoida oddiy",
+    ruleCorrect: "To'g'ri javob",
+    ruleCorrectResult: "bir daraja yuqori",
+    ruleWrong: "Xato javob",
+    ruleWrongResult: "1-darajaga qaytadi",
+    ruleFooter:
+      "Daraja qancha yuqori bo'lsa, karta shuncha kam takrorlanadi. 8-darajaga yetgan karta o'zlashtirilgan hisoblanadi.",
+
+    // Closing.
+    finalTitle: "Birinchi to'plamingizni bugun boshlang",
+    finalBody: "Ro'yxatdan o'tish bepul.",
+
+    footerRights: (year: number) => `${year} Magic Memorizer`,
   },
 } as const;

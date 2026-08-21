@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             className="bg-accent text-fg-on-accent flex size-8 items-center justify-center rounded-md text-sm font-semibold"
             aria-hidden="true"
           >
-            L
+            M
           </span>
           <span className="font-semibold">{uz.app.name}</span>
         </Link>

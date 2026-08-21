@@ -39,7 +39,7 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
               "rounded-full text-xs font-semibold",
             )}
           >
-            <span aria-hidden="true">L</span>
+            <span aria-hidden="true">M</span>
           </Link>
         </Tooltip>
 
