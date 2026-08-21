@@ -27,7 +27,7 @@ export function NavIsland({ dueCount, username }: { dueCount: number; username: 
         aria-label={uz.app.name}
         className={cn(
           "gap-2xs p-xs pl-sm border-border pointer-events-auto flex items-center",
-          "bg-surface/85 shadow-md rounded-full border backdrop-blur",
+          "bg-surface-raised/85 shadow-md rounded-full border backdrop-blur",
         )}
       >
         <Tooltip content={uz.app.name}>
