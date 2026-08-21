@@ -19,9 +19,7 @@ export function PageHeader({
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   breadcrumb?: readonly Crumb[];
-  /** Primary control, right-aligned on one line with the title. */
   action?: React.ReactNode;
-  /** Extra row under the subtitle, for badges or filters. */
   accessory?: React.ReactNode;
   className?: string;
 }) {
@@ -33,7 +31,7 @@ export function PageHeader({
             aria-label="breadcrumb"
             className="gap-2xs text-2xs text-fg-subtle flex items-center"
           >
-            {breadcrumb.map((crumb) => (
+            {breadcrumb.map((crumb, i) => (
               <span key={crumb.href} className="gap-2xs flex items-center">
                 <Link
                   href={crumb.href}
@@ -41,7 +39,7 @@ export function PageHeader({
                 >
                   {crumb.label}
                 </Link>
-                <span aria-hidden="true">/</span>
+                {i !== breadcrumb.length ? <span aria-hidden="true">/</span> : null}
               </span>
             ))}
           </nav>

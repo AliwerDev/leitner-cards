@@ -8,7 +8,6 @@ import { DeckFormDialog } from "./deck-form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { deleteDeckAction } from "@/lib/actions/decks";
 import { deckAccentStyle } from "@/lib/domain/deck-color";
-import { directionLabel } from "@/lib/domain/direction";
 import { uz } from "@/lib/i18n/uz";
 import type { Deck } from "@/types/api";
 
@@ -26,9 +25,8 @@ export function DeckHeader({ deck, dueCount }: { deck: Deck; dueCount: number })
   };
 
   return (
-    <div className="flex flex-col gap-md" style={deckAccentStyle(deck.color, deck.id)}>
+    <div className="gap-md flex flex-col" style={deckAccentStyle(deck.color, deck.id)}>
       <PageHeader
-        breadcrumb={[{ href: "/decks", label: uz.nav.decks }]}
         title={
           <span className="gap-xs flex min-w-0 items-center">
             <span className="bg-accent size-3 flex-none rounded-full" aria-hidden="true" />
@@ -38,7 +36,6 @@ export function DeckHeader({ deck, dueCount }: { deck: Deck; dueCount: number })
         subtitle={deck.description ?? undefined}
         accessory={
           <div className="gap-xs mt-3xs flex items-center">
-            <Badge size="sm">{directionLabel(deck.direction)}</Badge>
             {dueCount > 0 ? (
               <Badge tone="accent" size="sm">
                 {uz.deck.dueCount(dueCount)}
