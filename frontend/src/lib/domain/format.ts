@@ -67,24 +67,20 @@ export function formatCount(value: number): string {
   return new Intl.NumberFormat("uz-UZ").format(value);
 }
 
-const dayShortFormatter = new Intl.DateTimeFormat("uz-UZ", {
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
-
 /**
- * A chart axis label for one day of the daily series.
+ * A chart axis label for one day of the daily series, as DD/MM.
  *
- * The series sends "YYYY-MM-DD", which the backend bucketed in UTC. Parsing it
- * as UTC and formatting it back in UTC keeps the label on the same day the
- * backend counted - a local-time reading shifts every label by a day for any
- * user west of Greenwich.
+ * The series sends "YYYY-MM-DD", which the backend bucketed in UTC. Reading the
+ * parts out of the string keeps the label on the same day the backend counted -
+ * a local-time reading shifts every label by a day for any user west of
+ * Greenwich. Intl is not used here because the day/month order and the
+ * separator come from locale data, which DD/MM must not depend on.
  */
 export function formatDayShort(day: string): string {
-  const parsed = new Date(`${day}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return day;
-  return dayShortFormatter.format(parsed);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (match === null) return day;
+  const [, , month, dayOfMonth] = match;
+  return `${dayOfMonth}/${month}`;
 }
 
 /** "Takrorlash kerak" for a due card, otherwise when it comes back. */
