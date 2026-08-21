@@ -70,9 +70,48 @@ Kutilgan javob:
 | `docker compose exec php php yii migrate` | Migratsiyalarni bajarish |
 | `docker compose exec php php yii migrate/down 1` | Oxirgi migratsiyani qaytarish |
 | `docker compose exec db psql -U leitner -d leitner` | DB konsoli |
+| `docker compose exec php php tools/seed.php --fresh` | Test ma'lumotlarini yozish |
 
 DB'ga tashqi klient (DBeaver, TablePlus) orqali ulanish:
 `host=localhost port=5433 db=leitner user=leitner password=secret`
+
+### Test ma'lumotlari
+
+`backend/tools/seed.php` bo'sh bazani sinash uchun to'ldiradi. Skript haqiqiy API
+controllerlari orqali ishlaydi: bir xil routing, bir xil autentifikatsiya filtri,
+bir xil forma validatsiyasi va bir xil JWT. Faqat nginx chetlab o'tiladi, shuning
+uchun `login` va `register` uchun qo'yilgan daqiqada 5 so'rov chekloviga
+tushmaydi.
+
+```bash
+docker compose exec php php tools/seed.php --fresh
+```
+
+`--fresh` avval barcha foydalanuvchilarni o'chiradi. Ularga bog'liq deck, karta,
+progress va tarix yozuvlari ham o'chadi, chunki `user` jadvaliga ishora qiluvchi
+har bir tashqi kalit `ON DELETE CASCADE`.
+
+Natija: 20 foydalanuvchi, 45 deck, ~370 karta va ~2500 takrorlash. Ma'lumot
+ataylab xilma-xil: Oddiy va Premium hisoblar, faol/nofaol/o'chirilgan holatlar,
+bitta ham deck yaratmagan hisob, hech narsa o'rganmagan hisob, va Leitner
+darajalarining 1 dan 8 gacha bo'lgan taqsimoti.
+
+Takrorlash tarixi oxirgi 30 kunga taqsimlangan. Buning uchun skript
+`ReviewService::recordAnswer()` ni aniq vaqt bilan chaqiradi — controller
+chaqiradigan aynan shu metod, bir xil egalik tekshiruvi va bir xil tranzaksiya
+bilan, faqat vaqt parametr sifatida beriladi. `POST /api/v1/reviews` doim
+"hozir" deb javob yozadi, shuning uchun uning orqali daraja ko'tarilmaydi:
+2-darajaga chiqqan karta ikki kundan keyinga rejalashtiriladi va bugun qayta
+so'ralmaydi.
+
+Kirish uchun:
+
+| Hisob | Parol | Izoh |
+|---|---|---|
+| `admin` | `admin12345` | Administrator, Premium |
+| `alisher` | `parol12345` | Administrator, Premium |
+| `dilnoza` | `parol12345` | Premium, eng faol |
+| qolganlari | `parol12345` | Oddiy foydalanuvchilar |
 
 ---
 
