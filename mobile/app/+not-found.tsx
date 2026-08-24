@@ -9,7 +9,7 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: uz.errors.notFound }} />
-      <Screen>
+      <Screen topInset={false}>
         <EmptyState
           title={uz.errors.notFound}
           actionLabel={uz.common.back}

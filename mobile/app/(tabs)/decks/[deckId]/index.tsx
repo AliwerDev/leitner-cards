@@ -34,7 +34,7 @@ export default function DeckDetailScreen() {
 
   if (Number.isNaN(deckId)) {
     return (
-      <Screen>
+      <Screen topInset={false}>
         <ErrorState message={uz.errors.notFound} retryLabel={uz.common.retry} />
       </Screen>
     );
@@ -44,7 +44,7 @@ export default function DeckDetailScreen() {
 
   if (statsQuery.error) {
     return (
-      <Screen>
+      <Screen topInset={false}>
         <ErrorState
           message={
             statsQuery.error instanceof ApiError
@@ -120,7 +120,7 @@ function DeckBody({
   };
 
   return (
-    <Screen padded={false}>
+    <Screen padded={false} topInset={false}>
       <FlatList
         data={cardsQuery.data?.items ?? []}
         keyExtractor={(card) => String(card.id)}

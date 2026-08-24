@@ -16,6 +16,12 @@ export default function DecksLayout() {
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.canvas },
       }}
-    />
+    >
+      {/* The list draws its own title, so a header here would only repeat it -
+          and with no title set it fell back to the route name, "index". */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      {/* The title is set on the screen itself, once the deck name is loaded. */}
+      <Stack.Screen name="[deckId]/index" options={{ title: "" }} />
+    </Stack>
   );
 }

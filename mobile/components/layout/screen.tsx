@@ -5,11 +5,11 @@ import { useTheme } from "@/lib/theme/theme-context";
 /**
  * The canvas every screen sits on.
  *
- * Three things it exists to stop being re-solved per screen: the canvas
+ * Four things it exists to stop being re-solved per screen: the canvas
  * background (a transparent root borrows whatever is behind it and breaks the
- * dark theme), the safe-area inset at the bottom, and keyboard avoidance,
- * which needs different behaviour per platform - iOS slides the whole view,
- * Android resizes it.
+ * dark theme), the safe-area insets at the top and the bottom, and keyboard
+ * avoidance, which needs different behaviour per platform - iOS slides the
+ * whole view, Android resizes it.
  */
 
 export type ScreenProps = {
@@ -17,6 +17,11 @@ export type ScreenProps = {
   /** Wrap the content in a ScrollView. Off for screens that own their scrolling. */
   scroll?: boolean;
   padded?: boolean;
+  /**
+   * Keep the content clear of the status bar. Turn it off on a screen that
+   * sits under a navigation header, which already covers that room.
+   */
+  topInset?: boolean;
   /** Extra bottom room, e.g. for a floating action row. */
   bottomInset?: number;
   style?: ViewStyle;
@@ -27,6 +32,7 @@ export function Screen({
   children,
   scroll = false,
   padded = true,
+  topInset = true,
   bottomInset = 0,
   style,
   contentStyle,
@@ -54,7 +60,10 @@ export function Screen({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[{ flex: 1, backgroundColor: colors.canvas }, style]}
+      style={[
+        { flex: 1, backgroundColor: colors.canvas, paddingTop: topInset ? insets.top : 0 },
+        style,
+      ]}
     >
       {body}
     </KeyboardAvoidingView>

@@ -18,7 +18,7 @@ const ICON_STROKE = 1.75;
  * the card count. The description and the direction are deliberately absent -
  * they belong to the deck form and the detail screen, not to a list row.
  *
- * The color stripe runs along the top edge, where it spans the full width.
+ * The color stripe runs along the left edge, where it spans the full height.
  */
 export function DeckCard({
   deck,
@@ -40,17 +40,21 @@ export function DeckCard({
   const due = counts?.due ?? 0;
 
   return (
-    <Card onPress={onPress} padded={false} style={{ overflow: "hidden" }}>
+    <Card
+      onPress={onPress}
+      padded={false}
+      style={{ overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}
+    >
       <View
         style={{
-          height: 4,
+          width: 4,
           backgroundColor: accent,
           borderTopLeftRadius: radius.lg,
-          borderTopRightRadius: radius.lg,
+          borderBottomLeftRadius: radius.lg,
         }}
       />
 
-      <View style={{ padding: space.md, gap: space.xs }}>
+      <View style={{ flex: 1, padding: space.md, gap: space.xs }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: space.xs }}>
           <Text variant="heading" numberOfLines={2} style={{ flex: 1 }}>
             {deck.name}

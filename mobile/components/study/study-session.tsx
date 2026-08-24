@@ -59,7 +59,7 @@ export function StudySession({
 
   if (!currentCard) {
     return (
-      <Screen>
+      <Screen topInset={false}>
         <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
       </Screen>
     );
@@ -75,7 +75,7 @@ export function StudySession({
        of height. */
     <>
       <Stack.Screen options={{ title: uz.study.progress(state.index + 1, state.queue.length) }} />
-      <Screen contentStyle={{ flex: 1, gap: space.md, paddingVertical: space.md }}>
+      <Screen topInset={false} contentStyle={{ flex: 1, gap: space.md, paddingVertical: space.md }}>
         <View style={{ flex: 1 }}>
           <StudyCard
             cardId={currentCard.id}

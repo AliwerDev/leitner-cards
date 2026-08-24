@@ -45,7 +45,7 @@ export default function StudyScreen() {
     return (
       <>
         {header}
-        <Screen>
+        <Screen topInset={false}>
           <ErrorState
             message={error instanceof ApiError ? apiErrorMessage(error) : uz.errors.unexpected}
             onRetry={() => void refetch()}
@@ -60,7 +60,7 @@ export default function StudyScreen() {
     return (
       <>
         {header}
-        <Screen>
+        <Screen topInset={false}>
           <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
         </Screen>
       </>

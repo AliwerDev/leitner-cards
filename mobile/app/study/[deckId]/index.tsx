@@ -48,7 +48,7 @@ export default function DeckStudyScreen() {
     return (
       <>
         {header}
-        <Screen>
+        <Screen topInset={false}>
           <ErrorState
             message={
               dueQuery.error instanceof ApiError
@@ -67,7 +67,7 @@ export default function DeckStudyScreen() {
     return (
       <>
         {header}
-        <Screen>
+        <Screen topInset={false}>
           <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
         </Screen>
       </>

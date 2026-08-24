@@ -69,7 +69,7 @@ export default function DeckFormScreen() {
   const swatches = deckSwatches(resolved);
 
   return (
-    <Screen scroll contentStyle={{ gap: space.md, paddingTop: space.md }}>
+    <Screen scroll topInset={false} contentStyle={{ gap: space.md, paddingTop: space.md }}>
       <Stack.Screen options={{ title: editing ? uz.deck.edit : uz.deck.create }} />
 
       {form.message ? <Alert tone="warning" message={form.message} /> : null}

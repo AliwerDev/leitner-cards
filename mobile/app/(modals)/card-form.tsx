@@ -74,7 +74,7 @@ export default function CardFormScreen() {
   });
 
   return (
-    <Screen scroll contentStyle={{ gap: space.md, paddingTop: space.md }}>
+    <Screen scroll topInset={false} contentStyle={{ gap: space.md, paddingTop: space.md }}>
       <Stack.Screen
         options={{
           title: editing ? uz.card.edit : uz.card.create,

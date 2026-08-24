@@ -43,7 +43,11 @@ export function StudySummary({
   const accuracy = total === 0 ? null : correct / total;
 
   return (
-    <Screen scroll contentStyle={{ flexGrow: 1, justifyContent: "center", gap: space.md }}>
+    <Screen
+      scroll
+      topInset={false}
+      contentStyle={{ flexGrow: 1, justifyContent: "center", gap: space.md }}
+    >
       <Text variant="title" style={{ textAlign: "center" }}>
         {uz.study.summaryTitle}
       </Text>
@@ -79,7 +83,12 @@ export function StudySummary({
           message={uz.mobile.pendingBody(failedCount)}
           action={
             <View style={{ marginTop: space["2xs"], alignSelf: "flex-start" }}>
-              <Button label={uz.study.resendAnswers} size="sm" variant="outline" onPress={onRetryFailed} />
+              <Button
+                label={uz.study.resendAnswers}
+                size="sm"
+                variant="outline"
+                onPress={onRetryFailed}
+              />
             </View>
           }
         />

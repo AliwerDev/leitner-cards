@@ -79,7 +79,7 @@ export default function BulkAddScreen() {
   };
 
   return (
-    <Screen scroll contentStyle={{ gap: space.md, paddingTop: space.md }}>
+    <Screen scroll topInset={false} contentStyle={{ gap: space.md, paddingTop: space.md }}>
       <Stack.Screen options={{ title: uz.card.bulkTitle }} />
 
       {error ? <Alert tone="warning" message={error} /> : null}
