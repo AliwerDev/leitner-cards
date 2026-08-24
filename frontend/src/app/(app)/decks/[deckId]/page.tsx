@@ -54,13 +54,7 @@ export default async function DeckDetailPage({ params, searchParams }: PageProps
         <div className="gap-md flex flex-col">
           <LevelBoard buckets={stats.by_level} />
 
-          {stats.total_cards > 0 ? (
-            <Link href={`/decks/${deckId}/study`} className="block">
-              <Button size="lg" fullWidth>
-                {uz.deck.studyCards(dueCount > 0 ? dueCount : stats.total_cards)}
-              </Button>
-            </Link>
-          ) : null}
+          <StudyAction deckId={deckId} totalCards={stats.total_cards} dueCount={dueCount} />
         </div>
 
         <StatsStrip stats={stats} compact />
@@ -80,4 +74,43 @@ export default async function DeckDetailPage({ params, searchParams }: PageProps
     if (error instanceof ApiError && error.isNotFound) notFound();
     throw error;
   }
+}
+
+/**
+ * The button that starts a session.
+ *
+ * An empty deck gets nothing - the card list below already says the deck is
+ * empty. A deck with cards but nothing due keeps the button in place so the
+ * layout does not shift, but the button is inert and says why: sending the user
+ * to the study page would only show them an empty queue.
+ *
+ * The disabled case renders no Link. `disabled` stops the button from taking
+ * the click, but an anchor wrapped around it would still navigate.
+ */
+function StudyAction({
+  deckId,
+  totalCards,
+  dueCount,
+}: {
+  deckId: number;
+  totalCards: number;
+  dueCount: number;
+}) {
+  if (totalCards === 0) return null;
+
+  if (dueCount === 0) {
+    return (
+      <Button size="lg" fullWidth disabled>
+        {uz.deck.noDue}
+      </Button>
+    );
+  }
+
+  return (
+    <Link href={`/decks/${deckId}/study`} className="block">
+      <Button size="lg" fullWidth>
+        {uz.deck.studyCards(dueCount)}
+      </Button>
+    </Link>
+  );
 }
