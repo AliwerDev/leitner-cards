@@ -19,7 +19,17 @@ export default async function MarketingLayout({ children }: { children: React.Re
   const signedIn = (await getSession()) !== null;
 
   return (
-    <div className="bg-canvas flex min-h-dvh w-full flex-col">
+    <div className="bg-canvas relative flex min-h-dvh w-full flex-col">
+      {/* The landing wash. Its own fixed layer rather than a background on the
+          column: the column scrolls, and a wash that scrolls with it reads as a
+          coloured block sliding up the screen. Fixed and behind everything, it
+          stays where the design put it. Decorative, so it is hidden from the
+          accessibility tree and never takes a click. */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10 bg-(image:--gradient-landing)"
+        aria-hidden="true"
+      />
+
       {/* Sticky and translucent, matching the signed-in nav island. The blur
           needs a background that is not fully opaque, or it has nothing to
           work on. */}

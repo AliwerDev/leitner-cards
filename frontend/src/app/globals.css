@@ -241,6 +241,16 @@
   --color-rail: var(--palette-neutral-200);
   --color-rail-fill: var(--palette-accent-600);
 
+  /* The landing wash. Two soft radial pools - the accent hue at the top left,
+     a violet a little further round the wheel at the top right - fading into
+     the canvas well before the fold. The alphas are low on purpose: they move
+     the canvas by about 16/255 at the strongest point, which is enough to see
+     and not enough to read as a coloured panel. Each pool ends at transparent
+     so the wash resolves into the canvas instead of banding against it. */
+  --gradient-landing:
+    radial-gradient(80% 55% at 12% 0%, oklch(58.5% 0.196 264 / 0.06), transparent 70%),
+    radial-gradient(70% 50% at 88% 4%, oklch(62% 0.17 290 / 0.045), transparent 72%);
+
   --shadow-sm: 0 1px 2px oklch(20.5% 0.014 247 / 0.06);
   --shadow-md:
     0 4px 6px -1px oklch(20.5% 0.014 247 / 0.08), 0 2px 4px -2px oklch(20.5% 0.014 247 / 0.06);
@@ -304,6 +314,15 @@
   --color-glow: oklch(58.5% 0.196 264 / 0.3);
   --color-rail: var(--palette-neutral-700);
   --color-rail-fill: var(--palette-accent-500);
+
+  /* The same two pools, at a slightly lower alpha than the light theme. A near
+     black canvas has far more headroom than a near white one, so an identical
+     alpha shifts the pixel about three times as far here and the wash starts to
+     read as a coloured panel. These are tuned so both themes move the canvas by
+     a comparable amount. */
+  --gradient-landing:
+    radial-gradient(80% 55% at 12% 0%, oklch(58.5% 0.196 264 / 0.05), transparent 70%),
+    radial-gradient(70% 50% at 88% 4%, oklch(62% 0.17 290 / 0.04), transparent 72%);
 
   /* Deck hues need more lightness to read against a dark surface. */
   --palette-deck-1: oklch(68% 0.16 264);
