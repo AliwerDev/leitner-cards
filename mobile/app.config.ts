@@ -45,7 +45,10 @@ const config: ExpoConfig = {
     },
   },
   extra: {
-    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? null,
+    // `undefined`, never `null`: Expo serializes a null in `extra` into an
+    // empty object, and `{}` is truthy - which crashed lib/api/config.ts on
+    // start. An undefined key is simply omitted.
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? undefined,
     apiTimeoutMs: 10000,
     tokenRefreshSkewSeconds: 120,
   },

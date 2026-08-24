@@ -20,13 +20,36 @@ import { Platform } from "react-native";
  *   3. The platform default.
  */
 
+/**
+ * Typed as `unknown` on purpose.
+ *
+ * `extra` crosses a serialization boundary: app.config.ts runs in Node, and
+ * what arrives here has been through Expo's config pipeline. Asserting a shape
+ * with `as` only tells the compiler what to assume - it checks nothing at
+ * runtime, and it is what let a previous version of this file crash on start.
+ * Expo turns a `null` in the config into an empty object, `{}` is truthy, and
+ * `{}.replace()` is not a function.
+ *
+ * So every value is read through a guard below rather than trusted.
+ */
 type Extra = {
-  apiBaseUrl?: string | null;
-  apiTimeoutMs?: number;
-  tokenRefreshSkewSeconds?: number;
+  apiBaseUrl?: unknown;
+  apiTimeoutMs?: unknown;
+  tokenRefreshSkewSeconds?: unknown;
 };
 
-const extra: Extra = (Constants.expoConfig?.extra ?? {}) as Extra;
+const extra: Extra = Constants.expoConfig?.extra ?? {};
+
+/** A real, non-empty string, or null. Anything else from the config is noise. */
+function readString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+function readNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
 
 const API_PORT = 8080;
 const API_PATH = "/api/v1";
@@ -42,7 +65,7 @@ function platformLoopback(): string {
  * correct: a release build must be given an explicit URL.
  */
 function metroHost(): string | null {
-  const hostUri = Constants.expoConfig?.hostUri;
+  const hostUri = readString(Constants.expoConfig?.hostUri);
   const host = hostUri?.split(":")[0];
   if (!host) return null;
 
@@ -53,8 +76,8 @@ function metroHost(): string | null {
 }
 
 function resolveBaseUrl(): string {
-  const override = extra.apiBaseUrl;
-  if (override) return override.replace(/\/+$/, "");
+  const override = readString(extra.apiBaseUrl);
+  if (override !== null) return override.replace(/\/+$/, "");
 
   const host = metroHost() ?? platformLoopback();
   return `http://${host}:${API_PORT}${API_PATH}`;
@@ -62,10 +85,10 @@ function resolveBaseUrl(): string {
 
 export const API_BASE_URL = resolveBaseUrl();
 
-export const API_TIMEOUT_MS = extra.apiTimeoutMs ?? 10000;
+export const API_TIMEOUT_MS = readNumber(extra.apiTimeoutMs, 10000);
 
 /**
  * Refresh this many seconds before the access token actually expires, so a
  * request is never sent with a token that dies in flight.
  */
-export const TOKEN_REFRESH_SKEW_SECONDS = extra.tokenRefreshSkewSeconds ?? 120;
+export const TOKEN_REFRESH_SKEW_SECONDS = readNumber(extra.tokenRefreshSkewSeconds, 120);
