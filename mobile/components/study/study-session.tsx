@@ -65,20 +65,25 @@ export function StudySession({
   const revealed = state.phase === "revealed";
 
   return (
-    <Screen contentStyle={{ flex: 1, justifyContent: "center", gap: space.lg }}>
+    /* Three bands: the progress line, the card taking every remaining pixel,
+       and the actions pinned to the bottom where the thumb already is. */
+    <Screen contentStyle={{ flex: 1, gap: space.md, paddingVertical: space.md }}>
       <View style={{ alignItems: "center" }}>
         <Text variant="caption" tone="subtle">
           {uz.study.progress(state.index + 1, state.queue.length)}
         </Text>
       </View>
 
-      <StudyCard
-        prompt={currentCard.prompt}
-        answer={currentCard.answer}
-        revealed={revealed}
-        onFlip={session.flip}
-        accent={accent}
-      />
+      <View style={{ flex: 1 }}>
+        <StudyCard
+          prompt={currentCard.prompt}
+          answer={currentCard.answer}
+          revealed={revealed}
+          onFlip={session.flip}
+          accent={accent}
+          onSwipe={session.answer}
+        />
+      </View>
 
       {state.failed.length > 0 ? (
         <Alert tone="warning" message={uz.study.unsavedAnswers(state.failed.length)} />
@@ -89,11 +94,10 @@ export function StudySession({
           <View style={{ flex: 1 }}>
             <Button
               label={uz.study.wrong}
-              variant="outline"
               size="lg"
               block
               onPress={() => session.answer(false)}
-              style={{ borderColor: colors.wrong }}
+              style={{ backgroundColor: colors.wrong, borderColor: colors.wrong }}
             />
           </View>
           <View style={{ flex: 1 }}>

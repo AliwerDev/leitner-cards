@@ -12,21 +12,19 @@ import type { FontSize } from "@/lib/theme/tokens";
  */
 
 export type TextVariant =
-  | "display"
-  | "title"
-  | "heading"
-  | "body"
-  | "bodyStrong"
-  | "label"
-  | "caption"
-  | "mono";
+  "display" | "title" | "heading" | "body" | "bodyStrong" | "label" | "caption" | "mono";
 
-export type TextTone = "default" | "muted" | "subtle" | "accent" | "onAccent" | "danger" | "success";
+export type TextTone =
+  "default" | "muted" | "subtle" | "accent" | "onAccent" | "danger" | "success";
 
-const VARIANTS: Record<TextVariant, { size: FontSize; weight: TextStyle["fontWeight"]; leading: number }> = {
-  display: { size: "3xl", weight: "600", leading: 1.2 },
-  title: { size: "2xl", weight: "600", leading: 1.2 },
-  heading: { size: "lg", weight: "600", leading: 1.2 },
+const VARIANTS: Record<
+  TextVariant,
+  { size: FontSize; weight: TextStyle["fontWeight"]; leading: number }
+> = {
+  display: { size: "2xl", weight: "600", leading: 1.2 },
+  /** A screen's h1. Matches the web PageHeader, which is text-xl. */
+  title: { size: "xl", weight: "600", leading: 1.2 },
+  heading: { size: "md", weight: "600", leading: 1.3 },
   body: { size: "md", weight: "400", leading: 1.5 },
   bodyStrong: { size: "md", weight: "500", leading: 1.5 },
   label: { size: "sm", weight: "500", leading: 1.5 },
@@ -57,6 +55,10 @@ export function Text({ variant = "body", tone = "default", style, ...rest }: Tex
 
   return (
     <RNText
+      // RN multiplies fontSize by the OS font-scale setting. Uncapped, a large
+      // accessibility setting breaks the fixed-height card and tab layouts, so
+      // the scale is allowed but bounded.
+      maxFontSizeMultiplier={1.3}
       style={[
         {
           color: toneColor[tone],

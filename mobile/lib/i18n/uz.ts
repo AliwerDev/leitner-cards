@@ -162,8 +162,7 @@ export const uz = {
     emptyHint: "Barcha kartalar takrorlangan. Keyinroq qaytib keling.",
     deckEmpty: "Bu to'plamda karta yo'q",
     ruleTitle: "Leitner qoidasi",
-    ruleBody:
-      "To'g'ri javob kartani bir daraja oshiradi, xato javob esa 1-darajaga qaytaradi.",
+    ruleBody: "To'g'ri javob kartani bir daraja oshiradi, xato javob esa 1-darajaga qaytaradi.",
     mastered: "O'zlashtirildi!",
     progress: (done: number, total: number) => `${done} / ${total}`,
     shortcuts: "Klaviatura",
@@ -182,6 +181,7 @@ export const uz = {
     summaryAgain: "Yana takrorlash",
     summaryMoreLeft: "Yana kartalar bor",
     backToDeck: "To'plamga qaytish",
+    swipeHint: "Chapga suring - bilmadim, o'ngga suring - bilaman",
     unsavedAnswers: (n: number) => `${n} ta javob saqlanmadi`,
     resendAnswers: "Qayta yuborish",
   },
@@ -290,8 +290,7 @@ export const uz = {
     role: "Rol",
     status: "Holat",
     updated: "O'zgarishlar saqlandi.",
-    revokedSessions: (n: number) =>
-      n > 0 ? `${n} ta seans tugatildi.` : "Faol seans yo'q edi.",
+    revokedSessions: (n: number) => (n > 0 ? `${n} ta seans tugatildi.` : "Faol seans yo'q edi."),
 
     block: "Bloklash",
     unblock: "Blokdan chiqarish",

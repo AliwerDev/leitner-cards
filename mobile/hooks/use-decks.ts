@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createDeck,
   deleteDeck,
@@ -21,6 +21,47 @@ export function useDeck(id: number) {
 
 export function useDeckStats(id: number) {
   return useQuery({ queryKey: qk.deckStats(id), queryFn: () => getDeckStats(id) });
+}
+
+/**
+ * Fanning out one stats request per deck is free for a Regular account
+ * (3 decks) but would be self-inflicted load for a Premium user with 200.
+ * Past this many decks the counts appear on the detail page instead.
+ *
+ * Mirrors STATS_FANOUT_LIMIT in frontend/src/app/(app)/decks/page.tsx.
+ */
+const STATS_FANOUT_LIMIT = 12;
+
+export type DeckCounts = { total: number; due: number };
+
+/**
+ * The card and due counts behind each deck in the list.
+ *
+ * The keys are qk.deckStats, the same ones the detail screen uses, so opening
+ * a deck reads the count already in the cache instead of refetching it.
+ */
+export function useDeckCounts(deckIds: number[]): Record<number, DeckCounts> {
+  const ids = deckIds.length > 0 && deckIds.length <= STATS_FANOUT_LIMIT ? deckIds : [];
+
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: qk.deckStats(id),
+      queryFn: () => getDeckStats(id),
+    })),
+    combine: (results) => {
+      const counts: Record<number, DeckCounts> = {};
+      results.forEach((result, index) => {
+        const id = ids[index];
+        const stats = result.data?.stats;
+        // A deck whose stats have not arrived, or failed, is simply absent.
+        // The card renders without counts rather than showing a wrong zero.
+        if (id !== undefined && stats) {
+          counts[id] = { total: stats.total_cards, due: stats.due_now };
+        }
+      });
+      return counts;
+    },
+  });
 }
 
 /**

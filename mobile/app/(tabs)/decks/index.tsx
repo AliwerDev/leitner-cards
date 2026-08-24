@@ -4,7 +4,7 @@ import { FlatList, RefreshControl, View } from "react-native";
 import { Screen } from "@/components/layout/screen";
 import { DeckCard } from "@/components/decks/deck-card";
 import { Alert, Button, EmptyState, ErrorState, LoadingState, Text } from "@/components/ui";
-import { useDecks } from "@/hooks/use-decks";
+import { useDeckCounts, useDecks } from "@/hooks/use-decks";
 import { ApiError } from "@/lib/api/error";
 import { useAuth } from "@/lib/auth/session-context";
 import { canCreateDeck, decksLabel, deckLimitMessage } from "@/lib/domain/quota";
@@ -18,10 +18,11 @@ export default function DecksScreen() {
   const navigation = useRouter();
   const { data, isPending, error, refetch, isRefetching } = useDecks();
 
-  const openDeck = useCallback(
-    (id: number) => navigation.push(`/decks/${id}`),
-    [navigation],
-  );
+  // Hooks cannot sit behind the early returns below, so the counts are
+  // requested with whatever the list currently holds.
+  const counts = useDeckCounts((data ?? []).map((deck) => deck.id));
+
+  const openDeck = useCallback((id: number) => navigation.push(`/decks/${id}`), [navigation]);
 
   // Without a quota (the offline state) the button stays enabled and the
   // server decides. Disabling it on missing data would block a user who is
@@ -85,7 +86,9 @@ export default function DecksScreen() {
             onAction={canCreate ? () => router.push("/deck-form") : undefined}
           />
         }
-        renderItem={({ item }) => <DeckCard deck={item} onPress={() => openDeck(item.id)} />}
+        renderItem={({ item }) => (
+          <DeckCard deck={item} counts={counts[item.id]} onPress={() => openDeck(item.id)} />
+        )}
       />
 
       {data && data.length > 0 && canCreate ? (
