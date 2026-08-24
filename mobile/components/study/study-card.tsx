@@ -1,8 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  cancelAnimation,
   Easing,
   interpolate,
   interpolateColor,
@@ -46,7 +45,7 @@ const TINT_STRENGTH = 0.16;
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export type StudyCardProps = {
-  /** Identifies the card on show. A change resets the turn without animating. */
+  /** Identifies the card on show. A change remounts, resetting the turn. */
   cardId: number;
   prompt: string;
   answer: string;
@@ -58,15 +57,19 @@ export type StudyCardProps = {
   onSwipe?: (wasCorrect: boolean) => void;
 };
 
-export function StudyCard({
-  cardId,
-  prompt,
-  answer,
-  revealed,
-  onFlip,
-  accent,
-  onSwipe,
-}: StudyCardProps) {
+/**
+ * Remounts the card whenever the identity changes.
+ *
+ * `key` is what guarantees the reset: the incoming card gets fresh shared
+ * values - face down, centred - in the same commit that paints its text.
+ * Doing it any other way leaves a frame showing the wrong face. Everything
+ * below can therefore assume it only ever handles one card.
+ */
+export function StudyCard(props: StudyCardProps) {
+  return <StudyCardFace key={props.cardId} {...props} />;
+}
+
+function StudyCardFace({ prompt, answer, revealed, onFlip, accent, onSwipe }: StudyCardProps) {
   const { colors, duration, radius, space, layout } = useTheme();
   const reduceMotion = useReducedMotion();
 
@@ -78,36 +81,22 @@ export function StudyCard({
   /**
    * Turning the card over.
    *
-   * Driven by an effect rather than useDerivedValue so that a NEW CARD can
-   * snap back to the prompt instead of animating. Deriving it meant answering
-   * a revealed card ran the turn backwards - the next card arrived already
-   * showing its face and visibly rotated 180 degrees to hide it again.
+   * Only ever a flip of the card on screen. A NEW CARD does not animate at
+   * all: the exported wrapper remounts this component on `cardId`, so the
+   * incoming card is born with `progress` already at its starting value.
    *
-   * Answering changes `revealed` and `cardId` in the same render, so both are
-   * handled here in one effect: the card that changed identity snaps, and only
-   * a deliberate flip of the same card animates. Splitting this in two would
-   * leave the outcome resting on the order the effects happen to run in.
+   * That remount is what fixes the flicker. Resetting in an effect instead
+   * meant React had already painted the new text while `progress` still held
+   * the outgoing value - so for one frame the back face, now carrying the
+   * incoming card's answer, was the visible one. The answer flashed up before
+   * the prompt replaced it.
    */
-  const shown = useRef(cardId);
-
   useEffect(() => {
-    const isNewCard = shown.current !== cardId;
-    shown.current = cardId;
-
-    const target = revealed ? 1 : 0;
-
-    if (isNewCard) {
-      // Cancel whatever the outgoing card was doing and start face down.
-      cancelAnimation(progress);
-      progress.value = target;
-      return;
-    }
-
-    progress.value = withTiming(target, {
+    progress.value = withTiming(revealed ? 1 : 0, {
       duration: reduceMotion ? 0 : duration.flip,
       easing: Easing.bezier(0.4, 0, 0.2, 1),
     });
-  }, [cardId, revealed, reduceMotion, duration.flip, progress]);
+  }, [revealed, reduceMotion, duration.flip, progress]);
 
   const commit = (wasCorrect: boolean) => {
     onSwipe?.(wasCorrect);
@@ -128,18 +117,15 @@ export function StudyCard({
 
       if (past || flicked) {
         const wasCorrect = event.translationX > 0;
-        // Off the screen edge first, then answer. The card-change effect
-        // recentres it, so this never has to slide back.
+        // Off the screen edge first, then answer. The card STAYS off screen:
+        // recentring before the answer landed put the outgoing card, still
+        // showing its answer, back under the thumb for the frames it took the
+        // state update to arrive. The remount supplies a centred fresh card.
         translateX.value = withTiming(
           Math.sign(event.translationX) * SCREEN_WIDTH * 1.2,
           { duration: reduceMotion ? 0 : duration.fast },
           (finished) => {
-            if (finished) {
-              // Recentre on the UI thread before handing over, so the incoming
-              // card is never left sitting off screen.
-              translateX.value = 0;
-              runOnJS(commit)(wasCorrect);
-            }
+            if (finished) runOnJS(commit)(wasCorrect);
           },
         );
         return;
