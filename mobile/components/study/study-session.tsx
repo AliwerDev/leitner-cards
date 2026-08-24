@@ -1,8 +1,9 @@
 import * as Haptics from "expo-haptics";
+import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
 import { Screen } from "@/components/layout/screen";
-import { Alert, Button, EmptyState, Text } from "@/components/ui";
+import { Alert, Button, EmptyState } from "@/components/ui";
 import { uz } from "@/lib/i18n/uz";
 import { useTheme } from "@/lib/theme/theme-context";
 import { StudyCard } from "./study-card";
@@ -43,14 +44,17 @@ export function StudySession({
 
   if (state.phase === "summary") {
     return (
-      <StudySummary
-        answers={state.answers}
-        failedCount={state.failed.length}
-        queueWasFull={queueWasFull}
-        onRetryFailed={() => void session.retryFailed()}
-        onFinish={onFinish}
-        onContinue={onContinue}
-      />
+      <>
+        <Stack.Screen options={{ title: uz.study.summaryTitle }} />
+        <StudySummary
+          answers={state.answers}
+          failedCount={state.failed.length}
+          queueWasFull={queueWasFull}
+          onRetryFailed={() => void session.retryFailed()}
+          onFinish={onFinish}
+          onContinue={onContinue}
+        />
+      </>
     );
   }
 
@@ -65,56 +69,56 @@ export function StudySession({
   const revealed = state.phase === "revealed";
 
   return (
-    /* Three bands: the progress line, the card taking every remaining pixel,
-       and the actions pinned to the bottom where the thumb already is. */
-    <Screen contentStyle={{ flex: 1, gap: space.md, paddingVertical: space.md }}>
-      <View style={{ alignItems: "center" }}>
-        <Text variant="caption" tone="subtle">
-          {uz.study.progress(state.index + 1, state.queue.length)}
-        </Text>
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <StudyCard
-          cardId={currentCard.id}
-          prompt={currentCard.prompt}
-          answer={currentCard.answer}
-          revealed={revealed}
-          onFlip={session.flip}
-          accent={accent}
-          onSwipe={session.answer}
-        />
-      </View>
-
-      {state.failed.length > 0 ? (
-        <Alert tone="warning" message={uz.study.unsavedAnswers(state.failed.length)} />
-      ) : null}
-
-      {revealed ? (
-        <View style={{ flexDirection: "row", gap: space.sm }}>
-          <View style={{ flex: 1 }}>
-            <Button
-              label={uz.study.wrong}
-              size="lg"
-              block
-              onPress={() => session.answer(false)}
-              style={{ backgroundColor: colors.wrong, borderColor: colors.wrong }}
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Button
-              label={uz.study.correct}
-              size="lg"
-              block
-              onPress={() => session.answer(true)}
-              style={{ backgroundColor: colors.correct, borderColor: colors.correct }}
-            />
-          </View>
+    /* Two bands: the card taking every pixel it can, and the actions pinned to
+       the bottom where the thumb already is. The progress counter is the
+       header title rather than a row of its own - the word "Takrorlash" said
+       nothing the user did not already know, and the row cost the card a line
+       of height. */
+    <>
+      <Stack.Screen options={{ title: uz.study.progress(state.index + 1, state.queue.length) }} />
+      <Screen contentStyle={{ flex: 1, gap: space.md, paddingVertical: space.md }}>
+        <View style={{ flex: 1 }}>
+          <StudyCard
+            cardId={currentCard.id}
+            prompt={currentCard.prompt}
+            answer={currentCard.answer}
+            revealed={revealed}
+            onFlip={session.flip}
+            accent={accent}
+            onSwipe={session.answer}
+          />
         </View>
-      ) : (
-        <Button label={uz.study.reveal} size="lg" block onPress={session.reveal} />
-      )}
-    </Screen>
+
+        {state.failed.length > 0 ? (
+          <Alert tone="warning" message={uz.study.unsavedAnswers(state.failed.length)} />
+        ) : null}
+
+        {revealed ? (
+          <View style={{ flexDirection: "row", gap: space.sm }}>
+            <View style={{ flex: 1 }}>
+              <Button
+                label={uz.study.wrong}
+                size="lg"
+                block
+                onPress={() => session.answer(false)}
+                style={{ backgroundColor: colors.wrong, borderColor: colors.wrong }}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button
+                label={uz.study.correct}
+                size="lg"
+                block
+                onPress={() => session.answer(true)}
+                style={{ backgroundColor: colors.correct, borderColor: colors.correct }}
+              />
+            </View>
+          </View>
+        ) : (
+          <Button label={uz.study.reveal} size="lg" block onPress={session.reveal} />
+        )}
+      </Screen>
+    </>
   );
 }
 

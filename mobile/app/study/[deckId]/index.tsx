@@ -30,12 +30,10 @@ export default function DeckStudyScreen() {
   const dueQuery = useDueCards(deckId, DEFAULT_DUE_LIMIT);
 
   // Rendered by every branch below, so the header and its back button are
-  // there while the queue is still loading and when it comes back empty.
-  const header = (
-    <Stack.Screen
-      options={{ title: deckQuery.data?.name ?? uz.study.title, gestureEnabled: false }}
-    />
-  );
+  // there while the queue is still loading and when it comes back empty. Once
+  // cards are up the session overrides this title with its own progress
+  // counter, so this is only ever the pre-session fallback.
+  const header = <Stack.Screen options={{ title: uz.study.title, gestureEnabled: false }} />;
 
   if (dueQuery.isPending) {
     return (

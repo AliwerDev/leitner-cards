@@ -67,7 +67,7 @@ export function StudyCard({
   accent,
   onSwipe,
 }: StudyCardProps) {
-  const { colors, duration, radius, space, layout, elevation } = useTheme();
+  const { colors, duration, radius, space, layout } = useTheme();
   const reduceMotion = useReducedMotion();
 
   /** 0 shows the prompt, 1 shows the answer. */
@@ -223,9 +223,6 @@ export function StudyCard({
     borderTopWidth: 4,
     flex: 1,
     padding: space.lg,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.12,
-    ...elevation.md,
   };
 
   return (
