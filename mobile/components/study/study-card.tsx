@@ -33,6 +33,12 @@ import { useTheme } from "@/lib/theme/theme-context";
  * red or green as it travels, so the verdict is legible before the release.
  * The gesture stays off while the prompt is up, because there is no answer to
  * grade yet.
+ *
+ * ENTRANCE. The card that follows an answer fades up from slightly small.
+ * Without it the next prompt appears in one frame, which reads as the same
+ * card changing its text rather than a new card arriving. The move is small on
+ * purpose: the flip is the app's flourish, and the entrance must not compete
+ * with it.
  */
 
 /** How far the card must travel before the release counts as an answer. */
@@ -43,6 +49,9 @@ const SWIPE_VELOCITY = 700;
 const TINT_STRENGTH = 0.16;
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
+
+/** How small the incoming card starts before it settles at full size. */
+const ENTER_SCALE = 0.94;
 
 export type StudyCardProps = {
   /** Identifies the card on show. A change remounts, resetting the turn. */
@@ -77,6 +86,8 @@ function StudyCardFace({ prompt, answer, revealed, onFlip, accent, onSwipe }: St
   const progress = useSharedValue(revealed ? 1 : 0);
   /** Horizontal drag offset. */
   const translateX = useSharedValue(0);
+  /** 0 is the card arriving, 1 is the card settled. */
+  const enter = useSharedValue(reduceMotion ? 1 : 0);
 
   /**
    * Turning the card over.
@@ -97,6 +108,21 @@ function StudyCardFace({ prompt, answer, revealed, onFlip, accent, onSwipe }: St
       easing: Easing.bezier(0.4, 0, 0.2, 1),
     });
   }, [revealed, reduceMotion, duration.flip, progress]);
+
+  /**
+   * The arrival.
+   *
+   * This runs once per card, not once per flip: the wrapper remounts on
+   * `cardId`, so mounting IS the card arriving. Every dependency below is
+   * stable for the life of one card, so the flip never replays it.
+   */
+  useEffect(() => {
+    if (reduceMotion) return;
+    enter.value = withTiming(1, {
+      duration: duration.normal,
+      easing: Easing.out(Easing.quad),
+    });
+  }, [reduceMotion, duration.normal, enter]);
 
   const commit = (wasCorrect: boolean) => {
     onSwipe?.(wasCorrect);
@@ -143,9 +169,11 @@ function StudyCardFace({ prompt, answer, revealed, onFlip, accent, onSwipe }: St
   // the card back over on release.
   const gesture = Gesture.Race(pan, tap);
 
-  /** The whole stack drags and leans as one. */
+  /** The whole stack drags and leans as one, and arrives as one. */
   const containerStyle = useAnimatedStyle(() => ({
+    opacity: enter.value,
     transform: [
+      { scale: interpolate(enter.value, [0, 1], [ENTER_SCALE, 1]) },
       { translateX: translateX.value },
       // A slight lean in the direction of travel, so the card reads as thrown
       // rather than slid.

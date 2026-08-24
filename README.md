@@ -143,7 +143,7 @@ Barcha javoblar bir xil envelope shaklida:
 | PUT/PATCH | `/api/v1/cards/{id}` | Bearer | Kartani tahrirlash |
 | DELETE | `/api/v1/cards/{id}` | Bearer | Kartani o'chirish |
 | GET | `/api/v1/cards/{id}/progress` | Bearer | Karta darajasi + takrorlash tarixi |
-| GET | `/api/v1/reviews/due` | Bearer | Hozir takrorlash kerak bo'lgan kartalar |
+| GET | `/api/v1/reviews/due?deckId=N&limit=M` | Bearer | Hozir takrorlash kerak bo'lgan kartalar. `limit` berilmasa 20 ta. `limit=0` — hammasi (2000 tagacha), `limit=M` — bitta sahifa (1..100) |
 | GET | `/api/v1/reviews/count` | Bearer | Takrorlash kerak bo'lganlar soni |
 | POST | `/api/v1/reviews` | Bearer | Javobni yozish (`{cardId, wasCorrect}`) |
 | POST | `/api/v1/reviews/reset` | Bearer | Kartani 1-darajaga qaytarish |
@@ -389,6 +389,7 @@ Keyingi ishlar:
 - **Test frameworki** — hozir avtomatik test yo'q. `CardLevel` uchun PHPUnit
   unit testlari eng arzon boshlanish nuqtasi (DB kerak emas).
 - **Frontend** (7-bo'limga qarang) — `/reviews/due` → javob → `/reviews` sikli.
-- **Kunlik limit / sessiya rejimi** — hozir `due` barcha yetib kelgan kartalarni
-  qaytaradi, `limit` parametri bilan cheklanadi.
+- **Kunlik limit / sessiya rejimi** — hozir sessiya hajmi cheklanmagan: klient
+  `limit=0` yuboradi va tayyor kartalarning hammasini oladi. Kunlik chek kerak
+  bo'lsa, uni alohida sozlama sifatida loyihalash kerak.
 - **Teglar** — `tag` jadvali olib tashlangan, kerak bo'lsa qaytadan loyihalash kerak.

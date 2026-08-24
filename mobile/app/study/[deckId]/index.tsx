@@ -2,10 +2,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "@/components/layout/screen";
 import { StudySession } from "@/components/study/study-session";
+import { queueKey } from "@/components/study/queue-key";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui";
 import { useDeck } from "@/hooks/use-decks";
 import { useDueCards } from "@/hooks/use-due";
-import { DEFAULT_DUE_LIMIT } from "@/lib/api/endpoints/reviews";
+import { ALL_DUE_CAP } from "@/lib/api/endpoints/reviews";
 import { ApiError } from "@/lib/api/error";
 import { deckAccent } from "@/lib/domain/deck-color";
 import { apiErrorMessage } from "@/lib/i18n/api-errors";
@@ -27,7 +28,7 @@ export default function DeckStudyScreen() {
   const { colors, resolved } = useTheme();
 
   const deckQuery = useDeck(deckId);
-  const dueQuery = useDueCards(deckId, DEFAULT_DUE_LIMIT);
+  const dueQuery = useDueCards(deckId);
 
   // Rendered by every branch below, so the header and its back button are
   // there while the queue is still loading and when it comes back empty. Once
@@ -88,9 +89,9 @@ export default function DeckStudyScreen() {
     <>
       {header}
       <StudySession
-        key={dueQuery.data.cards.map((card) => card.id).join("-")}
+        key={queueKey(dueQuery.data.cards)}
         cards={dueQuery.data.cards}
-        queueWasFull={dueQuery.data.cards.length >= DEFAULT_DUE_LIMIT}
+        queueWasFull={dueQuery.data.count >= ALL_DUE_CAP}
         accent={accent}
         onFinish={finish}
         onContinue={() => void dueQuery.refetch()}

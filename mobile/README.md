@@ -104,6 +104,13 @@ arzonroq yechim edi.
 | `lib/i18n/uz.ts` | Oxiriga `mobile:` bo'limi qo'shilgan |
 | `lib/api/endpoints/*` | Faqat `server-only` importi olib tashlangan |
 
+`lib/api/endpoints/*` fayllari `check-sync` ro'yxatiga kirmaydi, chunki
+`server-only` importi tufayli ular bayt-baytda teng bo'la olmaydi. Backend
+shartnomasi o'zgarsa bu fayllarni **qo'lda** solishtirish kerak. Masalan
+`reviews.ts` dagi `ALL_DUE` va `ALL_DUE_CAP` ikki tomonda bir xil bo'lishi
+shart, va `ALL_DUE_CAP` backenddagi `ReviewController::ALL_LIMIT_CAP` ni
+takrorlaydi.
+
 ---
 
 ## 4. Web'dan farqlar va sabablari

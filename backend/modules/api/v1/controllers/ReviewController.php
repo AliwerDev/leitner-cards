@@ -15,6 +15,19 @@ use yii\filters\VerbFilter;
  */
 class ReviewController extends BaseApiController
 {
+    /** Largest page the endpoint will build when the caller asks for one. */
+    private const MAX_LIMIT = 100;
+
+    /**
+     * Ceiling on `limit=0`. A whole due queue is one response, so the size is
+     * bounded by the number of cards rather than by a page size. `front` and
+     * `back` accept 1000 characters each and `cardPayload()` repeats them as
+     * `prompt` and `answer`, which puts the worst case near 4 KB per card. This
+     * cap keeps the response under about 8 MB. Reaching it leaves cards behind,
+     * and the client already handles that: a full queue means more are waiting.
+     */
+    private const ALL_LIMIT_CAP = 2000;
+
     private ReviewService $reviews;
 
     public function init(): void
@@ -41,11 +54,15 @@ class ReviewController extends BaseApiController
 
     /**
      * GET /api/v1/reviews/due?deckId=3&limit=10
+     *
+     * `limit=0` asks for the whole due queue, up to ALL_LIMIT_CAP.
      */
     public function actionDue(?int $deckId = null, int $limit = 20): array
     {
         $userId = (int) Yii::$app->user->id;
-        $limit = max(1, min($limit, 100));
+        $limit = $limit === 0
+            ? self::ALL_LIMIT_CAP
+            : max(1, min($limit, self::MAX_LIMIT));
 
         $cards = $this->reviews->dueCards($userId, $deckId, $limit);
 

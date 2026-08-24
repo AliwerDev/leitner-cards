@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { StudySession } from "@/components/study/study-session";
 import { getDeck } from "@/lib/api/endpoints/decks";
-import { getDueCards, DEFAULT_DUE_LIMIT } from "@/lib/api/endpoints/reviews";
+import { getDueCards, ALL_DUE_CAP } from "@/lib/api/endpoints/reviews";
 import { ApiError } from "@/lib/api/error";
 import { uz } from "@/lib/i18n/uz";
 
@@ -18,7 +18,7 @@ export default async function DeckStudyPage({ params }: PageProps) {
   try {
     const [deck, due] = await Promise.all([
       getDeck(deckId),
-      getDueCards({ deckId, limit: DEFAULT_DUE_LIMIT }),
+      getDueCards({ deckId }),
     ]);
 
     return (
@@ -27,7 +27,7 @@ export default async function DeckStudyPage({ params }: PageProps) {
         deckId={deck.id}
         deckName={deck.name}
         deckColor={deck.color}
-        queueWasFull={due.cards.length >= DEFAULT_DUE_LIMIT}
+        queueWasFull={due.count >= ALL_DUE_CAP}
       />
     );
   } catch (error) {
