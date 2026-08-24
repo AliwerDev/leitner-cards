@@ -24,6 +24,8 @@ export default function DecksScreen() {
 
   const openDeck = useCallback((id: number) => navigation.push(`/decks/${id}`), [navigation]);
 
+  const studyDeck = useCallback((id: number) => navigation.push(`/study/${id}`), [navigation]);
+
   // Without a quota (the offline state) the button stays enabled and the
   // server decides. Disabling it on missing data would block a user who is
   // simply not connected yet.
@@ -87,7 +89,12 @@ export default function DecksScreen() {
           />
         }
         renderItem={({ item }) => (
-          <DeckCard deck={item} counts={counts[item.id]} onPress={() => openDeck(item.id)} />
+          <DeckCard
+            deck={item}
+            counts={counts[item.id]}
+            onPress={() => openDeck(item.id)}
+            onStudy={() => studyDeck(item.id)}
+          />
         )}
       />
 

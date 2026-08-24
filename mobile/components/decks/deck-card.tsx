@@ -1,6 +1,6 @@
 import { Layers } from "lucide-react-native";
 import { View } from "react-native";
-import { Card, Text } from "@/components/ui";
+import { Button, Card, Text } from "@/components/ui";
 import { deckAccent } from "@/lib/domain/deck-color";
 import { uz } from "@/lib/i18n/uz";
 import { useTheme } from "@/lib/theme/theme-context";
@@ -24,11 +24,14 @@ export function DeckCard({
   deck,
   counts,
   onPress,
+  onStudy,
 }: {
   deck: Deck;
   /** Absent while the counts are still loading, or past the fanout limit. */
   counts?: DeckCounts;
   onPress: () => void;
+  /** Starts a session for this deck. Only offered when cards are due. */
+  onStudy: () => void;
 }) {
   const { colors, radius, resolved, space } = useTheme();
   const accent = deckAccent(deck.color, deck.id, resolved);
@@ -97,6 +100,19 @@ export function DeckCard({
               </Text>
             )}
           </View>
+        ) : null}
+
+        {/* The one action worth reaching from the list. A deck with nothing
+            due does not get a disabled button - it gets no button, so the
+            row stays quiet until there is a reason to act. */}
+        {due > 0 ? (
+          <Button
+            label={uz.deck.startStudy}
+            size="sm"
+            block
+            onPress={onStudy}
+            style={{ backgroundColor: accent, borderColor: accent }}
+          />
         ) : null}
       </View>
     </Card>

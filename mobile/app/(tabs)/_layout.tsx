@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import { ChartPie, CirclePlay, Layers, User } from "lucide-react-native";
 import { useDueCount } from "@/hooks/use-due";
 import { uz } from "@/lib/i18n/uz";
@@ -62,6 +62,15 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => (
             <CirclePlay color={color} size={ICON_SIZE} strokeWidth={ICON_STROKE} />
           ),
+        }}
+        listeners={{
+          // The tab is a shortcut into the session, not a screen of its own.
+          // Cancel the tab navigation and push the full-screen route instead,
+          // so one tap goes straight to the first card.
+          tabPress: (event) => {
+            event.preventDefault();
+            router.push("/study");
+          },
         }}
       />
       <Tabs.Screen

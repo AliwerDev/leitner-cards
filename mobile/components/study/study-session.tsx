@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
@@ -123,11 +122,10 @@ export function StudySession({
 }
 
 /**
- * The haptic tick on an answer, and clearing the flash afterwards.
+ * Clearing the answer flash.
  *
- * This is the affordance the web genuinely cannot have, and it is what makes
- * an answer feel registered without waiting for the network - which is exactly
- * what the optimistic advance is trading on.
+ * The reducer sets `feedback` on every answer and nothing else resets it, so
+ * without this the flag would stay set for the rest of the session.
  */
 function useAnswerFeedback(
   feedback: ReturnType<typeof useStudySession>["state"]["feedback"],
@@ -135,12 +133,6 @@ function useAnswerFeedback(
 ) {
   useEffect(() => {
     if (!feedback) return;
-
-    if (feedback.mastered) {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } else {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
 
     const timer = setTimeout(clear, 900);
     return () => clearTimeout(timer);
