@@ -339,13 +339,14 @@ export const uz = {
     ctaSecondary: "Kirish",
     ctaSignedIn: "Ilovaga o'tish",
 
-    // Proof strip. Only the labels live here; proof-strip.tsx reads the numbers
-    // themselves from lib/domain/level.ts, so they cannot drift from the
-    // schedule the app runs.
+    // Proof strip. The numbers come from lib/domain/level.ts, not from a copy,
+    // so they cannot drift from the schedule the app runs.
     proofLabel: "Tizim raqamlarda",
-    proofLevels: "daraja",
-    proofLongest: "kungacha oraliq",
-    proofManual: "qo'lda rejalashtirish",
+    proof: [
+      { value: "8", label: "daraja" },
+      { value: "61", label: "kungacha oraliq" },
+      { value: "0", label: "qo'lda rejalashtirish" },
+    ],
 
     // Visual caption.
     visualCaption: "Har bir daraja - keyingi takrorlashgacha qancha kun",
