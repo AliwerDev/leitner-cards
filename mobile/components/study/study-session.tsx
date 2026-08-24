@@ -2,7 +2,8 @@ import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
 import { Screen } from "@/components/layout/screen";
-import { Alert, Button, EmptyState } from "@/components/ui";
+import { Alert, Button } from "@/components/ui";
+import { StudyEmpty } from "@/components/study/study-empty";
 import { uz } from "@/lib/i18n/uz";
 import { useTheme } from "@/lib/theme/theme-context";
 import { StudyCard } from "./study-card";
@@ -60,7 +61,7 @@ export function StudySession({
   if (!currentCard) {
     return (
       <Screen topInset={false}>
-        <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
+        <StudyEmpty />
       </Screen>
     );
   }

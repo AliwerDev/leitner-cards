@@ -49,7 +49,7 @@ export function EmptyState({ title, body, actionLabel, onAction, icon }: EmptySt
         gap: space.xs,
       }}
     >
-      {icon}
+      {icon ? <View style={{ marginBottom: space["2xs"] }}>{icon}</View> : null}
       <Text variant="heading" style={{ textAlign: "center" }}>
         {title}
       </Text>

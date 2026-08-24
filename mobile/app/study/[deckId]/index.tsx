@@ -3,7 +3,8 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "@/components/layout/screen";
 import { StudySession } from "@/components/study/study-session";
 import { queueKey } from "@/components/study/queue-key";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui";
+import { StudyEmpty } from "@/components/study/study-empty";
+import { ErrorState, LoadingState } from "@/components/ui";
 import { useDeck } from "@/hooks/use-decks";
 import { useDueCards } from "@/hooks/use-due";
 import { ALL_DUE_CAP } from "@/lib/api/endpoints/reviews";
@@ -69,7 +70,7 @@ export default function DeckStudyScreen() {
       <>
         {header}
         <Screen topInset={false}>
-          <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
+          <StudyEmpty />
         </Screen>
       </>
     );

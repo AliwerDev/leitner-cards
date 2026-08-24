@@ -1,3 +1,4 @@
+import { Monitor, Moon, Sun } from "lucide-react-native";
 import { useState } from "react";
 import { Alert as RNAlert, RefreshControl, ScrollView, View } from "react-native";
 import { Screen } from "@/components/layout/screen";
@@ -9,10 +10,16 @@ import { uz } from "@/lib/i18n/uz";
 import { useTheme } from "@/lib/theme/theme-context";
 import type { Theme } from "@/types/ui";
 
-const THEME_OPTIONS: { value: Theme; label: string }[] = [
-  { value: "light", label: uz.mobile.themeLight },
-  { value: "dark", label: uz.mobile.themeDark },
-  { value: "system", label: uz.mobile.themeSystem },
+/** Matches NAV_ICON_STROKE on the web. */
+const ICON_STROKE = 1.75;
+const ICON_SIZE = 16;
+
+type ThemeIcon = typeof Sun;
+
+const THEME_OPTIONS: { value: Theme; label: string; Icon: ThemeIcon }[] = [
+  { value: "light", label: uz.mobile.themeLight, Icon: Sun },
+  { value: "dark", label: uz.mobile.themeDark, Icon: Moon },
+  { value: "system", label: uz.mobile.themeSystem, Icon: Monitor },
 ];
 
 export default function ProfileTab() {
@@ -128,17 +135,27 @@ export default function ProfileTab() {
           <View style={{ gap: space.sm }}>
             <Text variant="heading">{uz.mobile.theme}</Text>
             <View style={{ flexDirection: "row", gap: space.xs }}>
-              {THEME_OPTIONS.map((option) => (
-                <View key={option.value} style={{ flex: 1 }}>
-                  <Button
-                    label={option.label}
-                    size="sm"
-                    block
-                    variant={preference === option.value ? "primary" : "outline"}
-                    onPress={() => setPreference(option.value)}
-                  />
-                </View>
-              ))}
+              {THEME_OPTIONS.map(({ value, label, Icon }) => {
+                const selected = preference === value;
+                return (
+                  <View key={value} style={{ flex: 1 }}>
+                    <Button
+                      label={label}
+                      icon={
+                        <Icon
+                          color={selected ? colors.textOnAccent : colors.text}
+                          size={ICON_SIZE}
+                          strokeWidth={ICON_STROKE}
+                        />
+                      }
+                      size="sm"
+                      block
+                      variant={selected ? "primary" : "outline"}
+                      onPress={() => setPreference(value)}
+                    />
+                  </View>
+                );
+              })}
             </View>
           </View>
         </Card>
