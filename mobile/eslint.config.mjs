@@ -1,4 +1,6 @@
-import expo from "eslint-config-expo/flat";
+// The .js extension is required: this is an ESM config, and a directory import
+// is not resolvable from one.
+import expo from "eslint-config-expo/flat.js";
 
 /**
  * Mirrors frontend/eslint.config.mjs where the reasoning carries over.
@@ -32,6 +34,17 @@ export default [
         },
       ],
     },
+  },
+  {
+    /**
+     * types/api.ts pairs each const-object enum with a type of the same name,
+     * which is the standard way to get an erasable enum in TypeScript. A value
+     * and a type can share a name, so this is not a real redeclaration - and
+     * the file is a verbatim copy of the frontend's, so it must not be edited
+     * to silence a linter.
+     */
+    files: ["types/api.ts"],
+    rules: { "@typescript-eslint/no-redeclare": "off" },
   },
   {
     // The palette is the one file allowed to name raw colors, and the sync

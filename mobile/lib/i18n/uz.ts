@@ -447,6 +447,10 @@ export const uz = {
     exitCancel: "Davom etish",
     exitConfirmAction: "Tugatish",
 
+    // The deck description field. The web has no editor for it, so it has no
+    // label of its own there - see lib/validation/deck.ts.
+    deckDescription: "Tavsif",
+
     // Settings.
     theme: "Ko'rinish",
     themeLight: "Yorug'",
