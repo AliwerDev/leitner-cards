@@ -20,7 +20,15 @@ export default function DecksScreen() {
 
   // Hooks cannot sit behind the early returns below, so the counts are
   // requested with whatever the list currently holds.
-  const counts = useDeckCounts((data ?? []).map((deck) => deck.id));
+  const { counts, refetch: refetchCounts } = useDeckCounts((data ?? []).map((deck) => deck.id));
+
+  // A pull refreshes the list AND every card's numbers. The counts are a
+  // separate query per deck, so refetching the list alone would update the
+  // names and leave the due badges stale.
+  const refreshAll = useCallback(
+    () => Promise.all([refetch(), refetchCounts()]),
+    [refetch, refetchCounts],
+  );
 
   const openDeck = useCallback((id: number) => navigation.push(`/decks/${id}`), [navigation]);
 
@@ -56,7 +64,7 @@ export default function DecksScreen() {
           flexGrow: 1,
         }}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />
+          <RefreshControl refreshing={isRefetching} onRefresh={() => void refreshAll()} />
         }
         ListHeaderComponent={
           <View style={{ gap: space.sm, marginBottom: space["2xs"] }}>

@@ -1,10 +1,19 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert as RNAlert, FlatList, Pressable, View } from "react-native";
+import { Alert as RNAlert, FlatList, Pressable, RefreshControl, View } from "react-native";
 import { Screen } from "@/components/layout/screen";
 import { LevelBoard } from "@/components/stats/level-board";
 import { StatsStrip } from "@/components/stats/stats-strip";
-import { Alert, Button, Card, EmptyState, ErrorState, Input, LoadingState, Text } from "@/components/ui";
+import {
+  Alert,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  Input,
+  LoadingState,
+  Text,
+} from "@/components/ui";
 import { useCardCount, useCards, useDeleteCard } from "@/hooks/use-cards";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useDeckStats, useDeleteDeck } from "@/hooks/use-decks";
@@ -64,7 +73,12 @@ export default function DeckDetailScreen() {
   return (
     <DeckAccentProvider accent={accent}>
       <Stack.Screen options={{ title: deck.name }} />
-      <DeckBody deckId={deckId} deckName={deck.name} stats={stats} />
+      <DeckBody
+        deckId={deckId}
+        deckName={deck.name}
+        stats={stats}
+        refetchStats={statsQuery.refetch}
+      />
     </DeckAccentProvider>
   );
 }
@@ -73,10 +87,13 @@ function DeckBody({
   deckId,
   deckName,
   stats,
+  refetchStats,
 }: {
   deckId: number;
   deckName: string;
   stats: Stats;
+  /** The header numbers live in the parent query, so a pull has to reach it. */
+  refetchStats: () => Promise<unknown>;
 }) {
   const router = useRouter();
   const { colors, space } = useTheme();
@@ -90,6 +107,24 @@ function DeckBody({
   const countQuery = useCardCount(deckId);
   const deleteCard = useDeleteCard(deckId);
   const deleteDeck = useDeleteDeck();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  /**
+   * A pull refreshes the whole screen, not just the list.
+   *
+   * The header numbers, the card page, and the quota count are three separate
+   * queries. Refreshing only the list would leave the level board and the
+   * due count stale, which is the opposite of what a pull is asking for.
+   */
+  const refresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchStats(), cardsQuery.refetch(), countQuery.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const cardCount = countQuery.data ?? stats.total_cards;
   const full = quota ? isDeckFull(cardCount, quota) : false;
@@ -125,6 +160,7 @@ function DeckBody({
         data={cardsQuery.data?.items ?? []}
         keyExtractor={(card) => String(card.id)}
         contentContainerStyle={{ padding: space.md, gap: space.sm, flexGrow: 1 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
         ListHeaderComponent={
           <View style={{ gap: space.sm }}>
             <LevelBoard buckets={stats.by_level} />
@@ -140,7 +176,11 @@ function DeckBody({
               items={[
                 { label: uz.stats.totalCards, value: formatCount(stats.total_cards) },
                 { label: uz.stats.dueNow, value: formatCount(stats.due_now), tone: colors.accent },
-                { label: uz.stats.mastered, value: formatCount(stats.mastered), tone: colors.mastered },
+                {
+                  label: uz.stats.mastered,
+                  value: formatCount(stats.mastered),
+                  tone: colors.mastered,
+                },
                 { label: uz.stats.notStarted, value: formatCount(stats.not_started) },
               ]}
             />
@@ -168,9 +208,7 @@ function DeckBody({
               </View>
             </View>
 
-            {full && quota ? (
-              <Alert tone="warning" message={cardsLabel(cardCount, quota)} />
-            ) : null}
+            {full && quota ? <Alert tone="warning" message={cardsLabel(cardCount, quota)} /> : null}
 
             <Input
               placeholder={uz.card.searchPlaceholder}

@@ -40,7 +40,10 @@ export type DeckCounts = { total: number; due: number };
  * The keys are qk.deckStats, the same ones the detail screen uses, so opening
  * a deck reads the count already in the cache instead of refetching it.
  */
-export function useDeckCounts(deckIds: number[]): Record<number, DeckCounts> {
+export function useDeckCounts(deckIds: number[]): {
+  counts: Record<number, DeckCounts>;
+  refetch: () => Promise<unknown>;
+} {
   const ids = deckIds.length > 0 && deckIds.length <= STATS_FANOUT_LIMIT ? deckIds : [];
 
   return useQueries({
@@ -59,7 +62,10 @@ export function useDeckCounts(deckIds: number[]): Record<number, DeckCounts> {
           counts[id] = { total: stats.total_cards, due: stats.due_now };
         }
       });
-      return counts;
+      // `refetch` is exposed so a pull on the list can refresh the per-card
+      // numbers too. Refetching only the deck list would update the names
+      // and leave every due badge stale.
+      return { counts, refetch: () => Promise.all(results.map((r) => r.refetch())) };
     },
   });
 }

@@ -1,4 +1,5 @@
-import { Alert as RNAlert, ScrollView, View } from "react-native";
+import { useState } from "react";
+import { Alert as RNAlert, RefreshControl, ScrollView, View } from "react-native";
 import { Screen } from "@/components/layout/screen";
 import { Alert, Button, Card, Text } from "@/components/ui";
 import { usePendingFlush } from "@/hooks/use-pending-flush";
@@ -16,8 +17,27 @@ const THEME_OPTIONS: { value: Theme; label: string }[] = [
 
 export default function ProfileTab() {
   const { colors, preference, setPreference, space } = useTheme();
-  const { user, quota, state, signOut, signOutEverywhere } = useAuth();
+  const { user, quota, state, signOut, signOutEverywhere, refresh } = useAuth();
   const pending = usePendingFlush();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  /**
+   * A pull re-reads the session and the outbox.
+   *
+   * The account and the quota come from /auth/me, which is not a query, so
+   * the auth context has to be asked directly. The outbox count is local
+   * storage and cannot go stale on its own, but a user pulling here has
+   * usually just come back online and wants both numbers checked.
+   */
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refresh(), pending.refreshCount()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const confirmSignOutEverywhere = () => {
     RNAlert.alert(uz.mobile.logoutEverywhere, uz.mobile.logoutEverywhereConfirm, [
@@ -32,7 +52,12 @@ export default function ProfileTab() {
 
   return (
     <Screen padded={false}>
-      <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+      <ScrollView
+        contentContainerStyle={{ padding: space.md, gap: space.md }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />
+        }
+      >
         <Text variant="title">{uz.profile.title}</Text>
 
         {state.status === "offline" ? (
