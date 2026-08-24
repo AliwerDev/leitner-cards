@@ -18,7 +18,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <div className="px-lg py-md mx-auto flex w-full max-w-6xl items-center justify-between">
           <Link href="/" className="gap-xs flex items-center">
             <span
-              className="bg-accent text-fg-on-accent flex size-8 items-center justify-center rounded-md text-sm font-semibold"
+              className="bg-accent text-fg-on-accent flex size-7 items-center justify-center rounded-md text-sm font-semibold"
               aria-hidden="true"
             >
               M

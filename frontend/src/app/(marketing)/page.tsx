@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { getSession } from "@/lib/auth/session";
 import { Hero } from "@/components/marketing/hero";
 import { JourneySection } from "@/components/marketing/journey-section";
-import { ProofStrip } from "@/components/marketing/proof-strip";
-import { FinalCtaSection, RuleSection } from "@/components/marketing/sections";
+import { FinalCtaSection } from "@/components/marketing/sections";
 import { uz } from "@/lib/i18n/uz";
 
 /**
@@ -31,9 +30,7 @@ export default async function LandingPage() {
   return (
     <>
       <Hero signedIn={signedIn} />
-      <ProofStrip />
       <JourneySection />
-      <RuleSection />
       <FinalCtaSection signedIn={signedIn} />
     </>
   );
