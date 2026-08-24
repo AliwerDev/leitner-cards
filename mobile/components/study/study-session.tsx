@@ -76,6 +76,7 @@ export function StudySession({
 
       <View style={{ flex: 1 }}>
         <StudyCard
+          cardId={currentCard.id}
           prompt={currentCard.prompt}
           answer={currentCard.answer}
           revealed={revealed}

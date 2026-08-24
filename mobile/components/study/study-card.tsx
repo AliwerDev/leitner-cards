@@ -1,11 +1,13 @@
-import { Dimensions, StyleSheet, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Dimensions, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+  cancelAnimation,
   Easing,
   interpolate,
+  interpolateColor,
   runOnJS,
   useAnimatedStyle,
-  useDerivedValue,
   useReducedMotion,
   useSharedValue,
   withTiming,
@@ -28,18 +30,24 @@ import { useTheme } from "@/lib/theme/theme-context";
  *
  * SWIPE. Once the answer is showing, a drag to the left answers "wrong" and a
  * drag to the right answers "correct" - the same two actions as the buttons
- * below, reachable without moving the thumb to a target. The gesture stays off
- * while the prompt is up, because there is no answer to grade yet.
+ * below, reachable without moving the thumb to a target. The surface tints
+ * red or green as it travels, so the verdict is legible before the release.
+ * The gesture stays off while the prompt is up, because there is no answer to
+ * grade yet.
  */
 
 /** How far the card must travel before the release counts as an answer. */
 const SWIPE_THRESHOLD = 110;
 /** A flick this fast commits even if it did not reach the distance. */
 const SWIPE_VELOCITY = 700;
+/** How strongly the surface takes the verdict color at full travel. */
+const TINT_STRENGTH = 0.16;
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export type StudyCardProps = {
+  /** Identifies the card on show. A change resets the turn without animating. */
+  cardId: number;
   prompt: string;
   answer: string;
   revealed: boolean;
@@ -50,25 +58,58 @@ export type StudyCardProps = {
   onSwipe?: (wasCorrect: boolean) => void;
 };
 
-export function StudyCard({ prompt, answer, revealed, onFlip, accent, onSwipe }: StudyCardProps) {
+export function StudyCard({
+  cardId,
+  prompt,
+  answer,
+  revealed,
+  onFlip,
+  accent,
+  onSwipe,
+}: StudyCardProps) {
   const { colors, duration, radius, space, layout, elevation } = useTheme();
   const reduceMotion = useReducedMotion();
 
-  const progress = useDerivedValue(() =>
-    withTiming(revealed ? 1 : 0, {
-      duration: reduceMotion ? 0 : duration.flip,
-      easing: Easing.bezier(0.4, 0, 0.2, 1),
-    }),
-  );
-
+  /** 0 shows the prompt, 1 shows the answer. */
+  const progress = useSharedValue(revealed ? 1 : 0);
   /** Horizontal drag offset. */
   const translateX = useSharedValue(0);
 
+  /**
+   * Turning the card over.
+   *
+   * Driven by an effect rather than useDerivedValue so that a NEW CARD can
+   * snap back to the prompt instead of animating. Deriving it meant answering
+   * a revealed card ran the turn backwards - the next card arrived already
+   * showing its face and visibly rotated 180 degrees to hide it again.
+   *
+   * Answering changes `revealed` and `cardId` in the same render, so both are
+   * handled here in one effect: the card that changed identity snaps, and only
+   * a deliberate flip of the same card animates. Splitting this in two would
+   * leave the outcome resting on the order the effects happen to run in.
+   */
+  const shown = useRef(cardId);
+
+  useEffect(() => {
+    const isNewCard = shown.current !== cardId;
+    shown.current = cardId;
+
+    const target = revealed ? 1 : 0;
+
+    if (isNewCard) {
+      // Cancel whatever the outgoing card was doing and start face down.
+      cancelAnimation(progress);
+      progress.value = target;
+      return;
+    }
+
+    progress.value = withTiming(target, {
+      duration: reduceMotion ? 0 : duration.flip,
+      easing: Easing.bezier(0.4, 0, 0.2, 1),
+    });
+  }, [cardId, revealed, reduceMotion, duration.flip, progress]);
+
   const commit = (wasCorrect: boolean) => {
-    // Recentre before handing over. The parent advances the queue, which
-    // reuses these faces for the next card, and a card left off screen would
-    // have to slide back in.
-    translateX.value = 0;
     onSwipe?.(wasCorrect);
   };
 
@@ -87,12 +128,18 @@ export function StudyCard({ prompt, answer, revealed, onFlip, accent, onSwipe }:
 
       if (past || flicked) {
         const wasCorrect = event.translationX > 0;
-        // Off the screen edge first, then answer.
+        // Off the screen edge first, then answer. The card-change effect
+        // recentres it, so this never has to slide back.
         translateX.value = withTiming(
           Math.sign(event.translationX) * SCREEN_WIDTH * 1.2,
           { duration: reduceMotion ? 0 : duration.fast },
           (finished) => {
-            if (finished) runOnJS(commit)(wasCorrect);
+            if (finished) {
+              // Recentre on the UI thread before handing over, so the incoming
+              // card is never left sitting off screen.
+              translateX.value = 0;
+              runOnJS(commit)(wasCorrect);
+            }
           },
         );
         return;
@@ -126,6 +173,27 @@ export function StudyCard({ prompt, answer, revealed, onFlip, accent, onSwipe }:
     ],
   }));
 
+  /**
+   * The verdict tint.
+   *
+   * A wash of color across the surface rather than a badge: the card is
+   * already the thing under the thumb, so tinting it says the same thing
+   * without another element appearing on top of the text.
+   */
+  const tintStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      translateX.value,
+      [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
+      [colors.wrong, colors.surface, colors.correct],
+    ),
+    opacity: interpolate(
+      Math.abs(translateX.value),
+      [0, SWIPE_THRESHOLD],
+      [0, TINT_STRENGTH],
+      "clamp",
+    ),
+  }));
+
   const frontStyle = useAnimatedStyle(() => ({
     transform: [
       { perspective: 1400 },
@@ -146,15 +214,6 @@ export function StudyCard({ prompt, answer, revealed, onFlip, accent, onSwipe }:
     opacity: progress.value < 0.5 ? 0 : 1,
   }));
 
-  /** The verdict a release right now would produce. */
-  const wrongHintStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD, 0], [1, 0], "clamp"),
-  }));
-
-  const correctHintStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [0, SWIPE_THRESHOLD], [0, 1], "clamp"),
-  }));
-
   const face = {
     backgroundColor: colors.surface,
     borderColor: colors.border,
@@ -169,14 +228,6 @@ export function StudyCard({ prompt, answer, revealed, onFlip, accent, onSwipe }:
     ...elevation.md,
   };
 
-  const badge = {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    paddingHorizontal: space.sm,
-    paddingVertical: space["2xs"],
-  };
-
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View
@@ -186,40 +237,23 @@ export function StudyCard({ prompt, answer, revealed, onFlip, accent, onSwipe }:
         style={[{ flex: 1, minHeight: layout.studyCardMinHeight }, containerStyle]}
       >
         <Animated.View style={[styles.face, face, frontStyle]}>
-          <Text variant="display" style={styles.text}>
+          <Text variant="title" adjustsFontSizeToFit minimumFontScale={0.6} style={styles.text}>
             {prompt}
           </Text>
         </Animated.View>
 
         <Animated.View style={[styles.face, face, styles.stacked, backStyle]}>
-          <Text variant="display" style={styles.text}>
+          <Text variant="title" adjustsFontSizeToFit minimumFontScale={0.6} style={styles.text}>
             {answer}
           </Text>
         </Animated.View>
 
-        {/* The verdict badges sit above both faces, so the flip does not turn
-            them over with the card. */}
+        {/* The tint rides above both faces, so the turn does not carry it
+            round with the card. */}
         <Animated.View
           pointerEvents="none"
-          style={[styles.badge, { top: space.md, left: space.md }, wrongHintStyle]}
-        >
-          <View style={[badge, { borderColor: colors.wrong }]}>
-            <Text variant="bodyStrong" style={{ color: colors.wrong }}>
-              {uz.study.wrong}
-            </Text>
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.badge, { top: space.md, right: space.md }, correctHintStyle]}
-        >
-          <View style={[badge, { borderColor: colors.correct }]}>
-            <Text variant="bodyStrong" style={{ color: colors.correct }}>
-              {uz.study.correct}
-            </Text>
-          </View>
-        </Animated.View>
+          style={[styles.stacked, { borderRadius: radius.xl }, tintStyle]}
+        />
       </Animated.View>
     </GestureDetector>
   );
@@ -236,8 +270,5 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: "center",
-  },
-  badge: {
-    position: "absolute",
   },
 });
