@@ -90,6 +90,7 @@
   --space-xl: 2rem;
   --space-2xl: 3rem;
   --space-3xl: 4rem;
+  --space-4xl: 6rem;
 
   /* Measures. Widths of content containers, NOT gaps between things.
      These are a separate scale from --space-*: a t-shirt name means one thing
@@ -157,6 +158,12 @@
   --sidebar-width: 15rem;
   --content-max: 72rem;
   --study-card-min-height: 12rem;
+
+  /* The journey node on the landing page, and the offset that puts the rail on
+     its centre line. On a phone the node column is one node wide, so the rail
+     sits half a node in. Both are read by components/marketing/journey-*.tsx. */
+  --journey-node-size: 2.25rem;
+  --journey-rail-offset: calc(var(--journey-node-size) / 2);
 
   /* Shell chrome. A floating command island sits above the content from the md
      breakpoint up, and a floating dock sits below it on smaller screens. Both
@@ -227,6 +234,13 @@
   --color-correct: var(--palette-success-600);
   --color-wrong: var(--palette-danger-600);
 
+  /* Landing-page depth. The glow is a halo behind the hero visual, so it is an
+     accent carrying its own alpha rather than a solid role. The rail pair is
+     the journey connector: an unfilled track, and the part scroll has filled. */
+  --color-glow: oklch(58.5% 0.196 264 / 0.14);
+  --color-rail: var(--palette-neutral-200);
+  --color-rail-fill: var(--palette-accent-600);
+
   --shadow-sm: 0 1px 2px oklch(20.5% 0.014 247 / 0.06);
   --shadow-md:
     0 4px 6px -1px oklch(20.5% 0.014 247 / 0.08), 0 2px 4px -2px oklch(20.5% 0.014 247 / 0.06);
@@ -284,6 +298,12 @@
   --color-mastered-subtle: var(--palette-accent-900);
   --color-correct: var(--palette-success-500);
   --color-wrong: var(--palette-danger-500);
+
+  /* The halo needs more alpha to read against a near-black canvas. The rail
+     track follows the dark border tone, which is lighter than its own surface. */
+  --color-glow: oklch(58.5% 0.196 264 / 0.3);
+  --color-rail: var(--palette-neutral-700);
+  --color-rail-fill: var(--palette-accent-500);
 
   /* Deck hues need more lightness to read against a dark surface. */
   --palette-deck-1: oklch(68% 0.16 264);
@@ -361,6 +381,10 @@
   --color-correct: var(--color-correct);
   --color-wrong: var(--color-wrong);
 
+  --color-glow: var(--color-glow);
+  --color-rail: var(--color-rail);
+  --color-rail-fill: var(--color-rail-fill);
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
@@ -390,6 +414,7 @@
   --spacing-xl: var(--space-xl);
   --spacing-2xl: var(--space-2xl);
   --spacing-3xl: var(--space-3xl);
+  --spacing-4xl: var(--space-4xl);
 
   /* Container widths. Tailwind resolves the max-w and min-w utilities against
      the spacing namespace BEFORE the container one, so declaring --spacing-md

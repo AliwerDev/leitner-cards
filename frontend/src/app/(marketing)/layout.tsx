@@ -11,17 +11,22 @@ import { uz } from "@/lib/i18n/uz";
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-canvas flex min-h-dvh w-full flex-col">
-      <header className="px-lg py-md mx-auto flex w-full max-w-6xl items-center justify-between">
-        <Link href="/" className="gap-xs flex items-center">
-          <span
-            className="bg-accent text-fg-on-accent flex size-8 items-center justify-center rounded-md text-sm font-semibold"
-            aria-hidden="true"
-          >
-            M
-          </span>
-          <span className="font-semibold">{uz.app.name}</span>
-        </Link>
-        <ThemeToggle />
+      {/* Sticky and translucent, matching the signed-in nav island. The blur
+          needs a background that is not fully opaque, or it has nothing to
+          work on. */}
+      <header className="bg-canvas/85 border-border sticky top-0 z-(--z-sticky) w-full border-b backdrop-blur">
+        <div className="px-lg py-md mx-auto flex w-full max-w-6xl items-center justify-between">
+          <Link href="/" className="gap-xs flex items-center">
+            <span
+              className="bg-accent text-fg-on-accent flex size-8 items-center justify-center rounded-md text-sm font-semibold"
+              aria-hidden="true"
+            >
+              M
+            </span>
+            <span className="font-semibold">{uz.app.name}</span>
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
 
       <main className="px-lg mx-auto w-full max-w-6xl flex-1">{children}</main>

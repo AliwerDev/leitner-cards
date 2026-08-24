@@ -1,3 +1,6 @@
+// COPIED FROM frontend/src/lib/i18n/uz.ts (plus a `mobile` section appended at the end).
+// Keep the shared keys in sync manually. See mobile/README.md.
+
 /**
  * Every user-facing string in the app.
  *
@@ -405,5 +408,52 @@ export const uz = {
     finalBody: "Ro'yxatdan o'tish bepul.",
 
     footerRights: (year: number) => `${year} Magic Memorizer`,
+  },
+
+  /**
+   * Keys the web app has no use for.
+   *
+   * Everything above this point is a byte-for-byte copy of the frontend file.
+   * Mobile-only copy lives here so a future `git diff` against the web version
+   * stays readable: the shared part matches exactly, and the additions are all
+   * in one block.
+   *
+   * Note what is deliberately NOT used on mobile: uz.study.shortcut* and
+   * uz.study.shortcuts describe keyboard shortcuts, and uz.admin.* covers a
+   * panel this app does not ship. Both are left in place rather than deleted,
+   * so the shared section keeps comparing clean.
+   */
+  mobile: {
+    // Offline outbox. The web keeps failed writes in memory; a phone can be
+    // killed by the OS mid-session, so they are persisted and re-sent.
+    pendingTitle: "Yuborilmagan javoblar",
+    pendingBody: (n: number) =>
+      `${n} ta javob hali serverga yuborilmadi. Internet qaytganda avtomatik yuboriladi.`,
+    pendingSending: "Yuborilmoqda...",
+    pendingSent: "Barcha javoblar yuborildi.",
+    pendingDropped: (n: number) => `${n} ta javob yuborilmadi: karta o'chirilgan bo'lishi mumkin.`,
+
+    // Connectivity.
+    offline: "Internet aloqasi yo'q",
+    offlineBody: "Ma'lumot eskirgan bo'lishi mumkin.",
+    retry: "Qayta urinish",
+
+    // A due card that has never been answered. The web conflates this with
+    // "mastered" because both send next_review_at: null - see formatNextReview.
+    newCard: "Yangi",
+
+    // Session exit, for the Android back button and the swipe-back gesture.
+    exitTitle: "Sessiyani tugatish",
+    exitCancel: "Davom etish",
+    exitConfirmAction: "Tugatish",
+
+    // Settings.
+    theme: "Ko'rinish",
+    themeLight: "Yorug'",
+    themeDark: "Qorong'i",
+    themeSystem: "Tizim bo'yicha",
+    logoutEverywhere: "Barcha qurilmalardan chiqish",
+    logoutEverywhereConfirm:
+      "Barcha qurilmalarda seans tugatiladi. Qaytadan kirish talab qilinadi.",
   },
 } as const;
