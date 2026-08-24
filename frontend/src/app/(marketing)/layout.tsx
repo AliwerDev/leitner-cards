@@ -1,14 +1,23 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { CtaLink } from "@/components/marketing/cta-link";
+import { getSession } from "@/lib/auth/session";
 import { uz } from "@/lib/i18n/uz";
 
 /**
  * Shell for the public marketing page.
  *
  * Unlike the auth shell this is reachable while signed in, so the logo points
- * at the landing page itself rather than at /login.
+ * at the landing page itself rather than at /login. For the same reason the
+ * header action reads the session: a signed-in visitor gets a way into the app
+ * instead of a sign-in link they do not need.
+ *
+ * getSession is cached per request, so sharing it with the page below costs no
+ * second /auth/me call.
  */
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+  const signedIn = (await getSession()) !== null;
+
   return (
     <div className="bg-canvas flex min-h-dvh w-full flex-col">
       {/* Sticky and translucent, matching the signed-in nav island. The blur
@@ -25,7 +34,12 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             </span>
             <span className="font-semibold">{uz.app.name}</span>
           </Link>
-          <ThemeToggle />
+          <div className="gap-sm flex items-center">
+            <ThemeToggle />
+            <CtaLink href={signedIn ? "/decks" : "/login"} size="sm">
+              {signedIn ? uz.landing.ctaSignedIn : uz.landing.ctaSecondary}
+            </CtaLink>
+          </div>
         </div>
       </header>
 
