@@ -239,14 +239,12 @@ function DeckBody({
               onLongPress={() => confirmDeleteCard(item.id)}
               onPress={() => router.push(`/card-form?deckId=${deckId}&cardId=${item.id}`)}
             >
-              <View style={{ gap: space["3xs"] }}>
-                <Text variant="bodyStrong" numberOfLines={2}>
-                  {item.front}
-                </Text>
-                <Text variant="caption" tone="muted" numberOfLines={2}>
-                  {item.back}
-                </Text>
-              </View>
+              {/* Front only. The back is the answer, and a list that shows it
+                  turns browsing the deck into an accidental spoiler. Tapping
+                  the row opens the form, which has both. */}
+              <Text variant="bodyStrong" numberOfLines={2}>
+                {item.front}
+              </Text>
             </Pressable>
           </Card>
         )}
