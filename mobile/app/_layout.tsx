@@ -80,6 +80,8 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="(tabs)" />
+        {/* Full screen over the tabs: a session hides the tab bar. */}
+        <Stack.Screen name="study" />
         <Stack.Screen name="(modals)" options={{ presentation: "modal", headerShown: false }} />
       </Stack.Protected>
 

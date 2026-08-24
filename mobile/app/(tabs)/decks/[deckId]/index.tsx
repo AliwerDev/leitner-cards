@@ -131,7 +131,7 @@ function DeckBody({
                   label={dueNow > 0 ? uz.deck.dueCount(dueNow) : uz.deck.noDue}
                   block
                   disabled={dueNow === 0}
-                  onPress={() => router.push(`/decks/${deckId}/study`)}
+                  onPress={() => router.push(`/study/${deckId}`)}
                 />
               </View>
             </View>

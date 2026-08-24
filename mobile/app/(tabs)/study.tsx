@@ -1,29 +1,25 @@
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { View } from "react-native";
 import { Screen } from "@/components/layout/screen";
-import { StudySession } from "@/components/study/study-session";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui";
-import { useDueCards } from "@/hooks/use-due";
+import { Button, EmptyState, ErrorState, LoadingState, Text } from "@/components/ui";
+import { useDueCount } from "@/hooks/use-due";
 import { ApiError } from "@/lib/api/error";
-import { DEFAULT_DUE_LIMIT } from "@/lib/api/endpoints/reviews";
 import { apiErrorMessage } from "@/lib/i18n/api-errors";
 import { uz } from "@/lib/i18n/uz";
-import { qkPrefix } from "@/lib/query/keys";
 import { useTheme } from "@/lib/theme/theme-context";
 
 /**
- * Study across every deck.
+ * The Study tab: the entry point, not the session.
  *
- * The queue is fetched once per session. `queueWasFull` is how the summary
- * knows to offer "more cards left": the endpoint clamps to `limit`, so a full
- * page means there is more behind it, and `count` in the response is the size
- * of this page rather than a total.
+ * The session itself is /study, outside (tabs), because it is a full-screen
+ * task - the tab bar is a distraction mid-session and the header back button
+ * is the single way out. This screen only decides whether there is anything to
+ * start.
  */
 export default function StudyTab() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { colors } = useTheme();
-  const { data, isPending, error, refetch } = useDueCards(undefined, DEFAULT_DUE_LIMIT);
+  const { space } = useTheme();
+  const { data, isPending, error, refetch } = useDueCount();
 
   if (isPending) return <LoadingState />;
 
@@ -39,7 +35,9 @@ export default function StudyTab() {
     );
   }
 
-  if (data.cards.length === 0) {
+  const due = data.due_count;
+
+  if (due === 0) {
     return (
       <Screen>
         <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
@@ -47,24 +45,16 @@ export default function StudyTab() {
     );
   }
 
-  const finish = () => {
-    // The session wrote due_count into the cache as it went, but the queue and
-    // every aggregate are now stale.
-    void queryClient.invalidateQueries({ queryKey: qkPrefix.due });
-    void queryClient.invalidateQueries({ queryKey: qkPrefix.stats });
-    router.push("/decks");
-  };
-
   return (
-    <StudySession
-      // Remount on a new queue so the state machine starts clean rather than
-      // resuming at a stale index.
-      key={data.cards.map((card) => card.id).join("-")}
-      cards={data.cards}
-      queueWasFull={data.cards.length >= DEFAULT_DUE_LIMIT}
-      accent={colors.accent}
-      onFinish={finish}
-      onContinue={() => void refetch()}
-    />
+    <Screen contentStyle={{ flex: 1, justifyContent: "center", gap: space.lg }}>
+      <View style={{ alignItems: "center", gap: space["2xs"] }}>
+        <Text variant="display">{due}</Text>
+        <Text variant="body" tone="muted">
+          {uz.stats.dueNow}
+        </Text>
+      </View>
+
+      <Button label={uz.study.title} size="lg" block onPress={() => router.push("/study")} />
+    </Screen>
   );
 }

@@ -13,7 +13,12 @@ import { uz } from "@/lib/i18n/uz";
 import { qk, qkPrefix } from "@/lib/query/keys";
 import { useTheme } from "@/lib/theme/theme-context";
 
-/** A session scoped to one deck, carrying that deck's color. */
+/**
+ * A session scoped to one deck, carrying that deck's color.
+ *
+ * The route is /study/[deckId], outside (tabs), so the session fills the
+ * screen and the tab bar is gone for its duration.
+ */
 export default function DeckStudyScreen() {
   const params = useLocalSearchParams<{ deckId: string }>();
   const deckId = Number(params.deckId);
@@ -24,29 +29,50 @@ export default function DeckStudyScreen() {
   const deckQuery = useDeck(deckId);
   const dueQuery = useDueCards(deckId, DEFAULT_DUE_LIMIT);
 
-  if (dueQuery.isPending) return <LoadingState />;
+  // Rendered by every branch below, so the header and its back button are
+  // there while the queue is still loading and when it comes back empty.
+  const header = (
+    <Stack.Screen
+      options={{ title: deckQuery.data?.name ?? uz.study.title, gestureEnabled: false }}
+    />
+  );
+
+  if (dueQuery.isPending) {
+    return (
+      <>
+        {header}
+        <LoadingState />
+      </>
+    );
+  }
 
   if (dueQuery.error) {
     return (
-      <Screen>
-        <ErrorState
-          message={
-            dueQuery.error instanceof ApiError
-              ? apiErrorMessage(dueQuery.error)
-              : uz.errors.unexpected
-          }
-          onRetry={() => void dueQuery.refetch()}
-          retryLabel={uz.common.retry}
-        />
-      </Screen>
+      <>
+        {header}
+        <Screen>
+          <ErrorState
+            message={
+              dueQuery.error instanceof ApiError
+                ? apiErrorMessage(dueQuery.error)
+                : uz.errors.unexpected
+            }
+            onRetry={() => void dueQuery.refetch()}
+            retryLabel={uz.common.retry}
+          />
+        </Screen>
+      </>
     );
   }
 
   if (dueQuery.data.cards.length === 0) {
     return (
-      <Screen>
-        <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
-      </Screen>
+      <>
+        {header}
+        <Screen>
+          <EmptyState title={uz.study.empty} body={uz.study.emptyHint} />
+        </Screen>
+      </>
     );
   }
 
@@ -62,7 +88,7 @@ export default function DeckStudyScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: uz.study.title, gestureEnabled: false }} />
+      {header}
       <StudySession
         key={dueQuery.data.cards.map((card) => card.id).join("-")}
         cards={dueQuery.data.cards}
