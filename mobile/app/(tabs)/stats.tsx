@@ -74,7 +74,12 @@ export default function StatsTab() {
           </View>
         </Card>
 
-        <LevelBoard buckets={data.by_level} />
+        <Card>
+          <View style={{ gap: space.sm }}>
+            <Text variant="heading">{uz.stats.byLevel}</Text>
+            <LevelBoard buckets={data.by_level} />
+          </View>
+        </Card>
       </ScrollView>
     </Screen>
   );

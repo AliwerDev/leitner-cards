@@ -2,6 +2,8 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert as RNAlert, FlatList, Pressable, View } from "react-native";
 import { Screen } from "@/components/layout/screen";
+import { LevelBoard } from "@/components/stats/level-board";
+import { StatsStrip } from "@/components/stats/stats-strip";
 import { Alert, Button, Card, EmptyState, ErrorState, Input, LoadingState, Text } from "@/components/ui";
 import { useCardCount, useCards, useDeleteCard } from "@/hooks/use-cards";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -9,10 +11,12 @@ import { useDeckStats, useDeleteDeck } from "@/hooks/use-decks";
 import { ApiError } from "@/lib/api/error";
 import { useAuth } from "@/lib/auth/session-context";
 import { deckAccent } from "@/lib/domain/deck-color";
+import { formatCount } from "@/lib/domain/format";
 import { cardsLabel, isDeckFull } from "@/lib/domain/quota";
 import { apiErrorMessage } from "@/lib/i18n/api-errors";
 import { uz } from "@/lib/i18n/uz";
 import { DeckAccentProvider, useTheme } from "@/lib/theme/theme-context";
+import type { Stats } from "@/types/api";
 
 /**
  * One deck: its numbers, then its cards.
@@ -60,7 +64,7 @@ export default function DeckDetailScreen() {
   return (
     <DeckAccentProvider accent={accent}>
       <Stack.Screen options={{ title: deck.name }} />
-      <DeckBody deckId={deckId} deckName={deck.name} dueNow={stats.due_now} total={stats.total_cards} />
+      <DeckBody deckId={deckId} deckName={deck.name} stats={stats} />
     </DeckAccentProvider>
   );
 }
@@ -68,16 +72,14 @@ export default function DeckDetailScreen() {
 function DeckBody({
   deckId,
   deckName,
-  dueNow,
-  total,
+  stats,
 }: {
   deckId: number;
   deckName: string;
-  dueNow: number;
-  total: number;
+  stats: Stats;
 }) {
   const router = useRouter();
-  const { space } = useTheme();
+  const { colors, space } = useTheme();
   const { quota } = useAuth();
 
   const [search, setSearch] = useState("");
@@ -89,7 +91,7 @@ function DeckBody({
   const deleteCard = useDeleteCard(deckId);
   const deleteDeck = useDeleteDeck();
 
-  const cardCount = countQuery.data ?? total;
+  const cardCount = countQuery.data ?? stats.total_cards;
   const full = quota ? isDeckFull(cardCount, quota) : false;
 
   const confirmDeleteCard = (id: number) => {
@@ -125,16 +127,23 @@ function DeckBody({
         contentContainerStyle={{ padding: space.md, gap: space.sm, flexGrow: 1 }}
         ListHeaderComponent={
           <View style={{ gap: space.sm }}>
-            <View style={{ flexDirection: "row", gap: space.xs }}>
-              <View style={{ flex: 1 }}>
-                <Button
-                  label={dueNow > 0 ? uz.deck.dueCount(dueNow) : uz.deck.noDue}
-                  block
-                  disabled={dueNow === 0}
-                  onPress={() => router.push(`/study/${deckId}`)}
-                />
-              </View>
-            </View>
+            <LevelBoard buckets={stats.by_level} />
+
+            <Button
+              label={stats.due_now > 0 ? uz.deck.dueCount(stats.due_now) : uz.deck.noDue}
+              block
+              disabled={stats.due_now === 0}
+              onPress={() => router.push(`/study/${deckId}`)}
+            />
+
+            <StatsStrip
+              items={[
+                { label: uz.stats.totalCards, value: formatCount(stats.total_cards) },
+                { label: uz.stats.dueNow, value: formatCount(stats.due_now), tone: colors.accent },
+                { label: uz.stats.mastered, value: formatCount(stats.mastered), tone: colors.mastered },
+                { label: uz.stats.notStarted, value: formatCount(stats.not_started) },
+              ]}
+            />
 
             <View style={{ flexDirection: "row", gap: space.xs }}>
               <View style={{ flex: 1 }}>
