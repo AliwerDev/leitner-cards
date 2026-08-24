@@ -451,10 +451,10 @@ export const uz = {
     deckDescription: "Tavsif",
 
     // Settings.
-    theme: "Ko'rinish",
+    theme: "Tema",
     themeLight: "Yorug'",
     themeDark: "Qorong'i",
-    themeSystem: "Tizim bo'yicha",
+    themeSystem: "Tizim",
     logoutEverywhere: "Barcha qurilmalardan chiqish",
     logoutEverywhereConfirm:
       "Barcha qurilmalarda seans tugatiladi. Qaytadan kirish talab qilinadi.",
