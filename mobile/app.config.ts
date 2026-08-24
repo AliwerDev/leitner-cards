@@ -19,6 +19,7 @@ import type { ExpoConfig } from "expo/config";
 const config: ExpoConfig = {
   name: "Magic Memorizer",
   slug: "magic-memorizer",
+  owner: "aliwerdev",
   scheme: "magicmemorizer",
   version: "1.0.0",
   orientation: "portrait",
@@ -36,6 +37,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: "uz.magicmemorizer.app",
+    versionCode: 1,
     predictiveBackGestureEnabled: false,
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
@@ -45,6 +47,10 @@ const config: ExpoConfig = {
     },
   },
   extra: {
+    // `eas init` cannot write this itself, because app.config.ts is a dynamic
+    // config rather than static JSON. Without it `eas build` cannot tell which
+    // EAS project this is.
+    eas: { projectId: "77807df8-0c59-4a7b-93c7-ab53d91c8d59" },
     // `undefined`, never `null`: Expo serializes a null in `extra` into an
     // empty object, and `{}` is truthy - which crashed lib/api/config.ts on
     // start. An undefined key is simply omitted.
