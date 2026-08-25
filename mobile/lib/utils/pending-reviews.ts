@@ -187,14 +187,21 @@ export type FlushResult = {
 };
 
 /**
- * One flush at a time, process-wide.
+ * One flush at a time, process-wide - and every caller gets its result.
  *
- * usePendingFlush mounts in two places - the root, so syncing is not limited
- * to the profile tab, and profile itself, for the count it displays. Each hook
- * has its own re-entry ref, so the guard has to live below both of them or the
- * two mounts send the same batch twice.
+ * usePendingFlush mounts in several places (the root, so syncing is not
+ * limited to one tab, plus the screens that display a count), and each hook
+ * has its own re-entry ref, so the guard has to live below all of them or two
+ * mounts send the same batch twice.
+ *
+ * WHY A SHARED PROMISE RATHER THAN A BOOLEAN. A boolean turned the loser away
+ * with `sent: 0`, which broke the summary's retry button: reconnecting fires a
+ * background flush, the user taps retry a moment later, and the tap was
+ * reported as "nothing sent, still pending" even though the flush it collided
+ * with went on to send everything. Joining the in-flight promise means the
+ * second caller waits for the real answer instead of a fabricated one.
  */
-let flushing = false;
+let inFlight: Promise<FlushResult> | null = null;
 
 /**
  * Try to send everything in the outbox.
@@ -212,78 +219,78 @@ let flushing = false;
  * slicing it in order preserves that, and the server sorts by reviewedAt as
  * well - neither side relies on the other to get it right.
  */
-export async function flushPending(): Promise<FlushResult> {
-  if (flushing) {
-    return { sent: 0, dropped: 0, remaining: (await readPending()).length };
-  }
+export function flushPending(): Promise<FlushResult> {
+  // Join the flush already running rather than starting a second one or
+  // reporting a result that did not happen.
+  inFlight ??= runFlush().finally(() => {
+    inFlight = null;
+  });
 
-  flushing = true;
+  return inFlight;
+}
 
-  try {
-    const entries = await readPending();
-    if (entries.length === 0) return { sent: 0, dropped: 0, remaining: 0 };
+async function runFlush(): Promise<FlushResult> {
+  const entries = await readPending();
+  if (entries.length === 0) return { sent: 0, dropped: 0, remaining: 0 };
 
-    const settled = new Set<string>();
-    let sent = 0;
-    let dropped = 0;
+  const settled = new Set<string>();
+  let sent = 0;
+  let dropped = 0;
 
-    for (let start = 0; start < entries.length; start += BATCH_SIZE) {
-      const chunk = entries.slice(start, start + BATCH_SIZE);
+  for (let start = 0; start < entries.length; start += BATCH_SIZE) {
+    const chunk = entries.slice(start, start + BATCH_SIZE);
 
-      try {
-        const response = await submitReviewBatch(
-          chunk.map((entry) => ({
-            cardId: entry.cardId,
-            wasCorrect: entry.wasCorrect,
-            // Seconds: the backend stores every timestamp as a second integer.
-            reviewedAt: Math.floor(entry.at / 1000),
-            clientId: entry.clientId,
-          })),
-        );
+    try {
+      const response = await submitReviewBatch(
+        chunk.map((entry) => ({
+          cardId: entry.cardId,
+          wasCorrect: entry.wasCorrect,
+          // Seconds: the backend stores every timestamp as a second integer.
+          reviewedAt: Math.floor(entry.at / 1000),
+          clientId: entry.clientId,
+        })),
+      );
 
-        for (const result of response.results) {
-          if (result.clientId === null) continue;
+      for (const result of response.results) {
+        if (result.clientId === null) continue;
 
-          if (result.status === "applied" || result.status === "duplicate") {
-            settled.add(result.clientId);
-            sent += 1;
-          } else if (result.status === "rejected") {
-            settled.add(result.clientId);
-            dropped += 1;
-          }
-          // "failed" is left in the outbox for the next attempt.
+        if (result.status === "applied" || result.status === "duplicate") {
+          settled.add(result.clientId);
+          sent += 1;
+        } else if (result.status === "rejected") {
+          settled.add(result.clientId);
+          dropped += 1;
         }
-      } catch (error) {
-        const permanent =
-          error instanceof ApiError &&
-          (error.isValidation || error.isNotFound || error.isForbidden);
-
-        if (permanent) {
-          // The whole chunk was rejected at the envelope level - an oversize
-          // batch, or a body the server could not parse. Resending it
-          // unchanged cannot work, so drop it rather than wedge the outbox
-          // behind it forever.
-          for (const entry of chunk) {
-            settled.add(entry.clientId);
-            dropped += 1;
-          }
-          continue;
-        }
-
-        /*
-         * No connection, or the server is down. Stop rather than grind through
-         * the remaining chunks: every one of them fails the same way, and the
-         * later chunks hold the newer answers, which must not reach the server
-         * before the earlier ones if the connection recovers mid-loop.
-         */
-        break;
+        // "failed" is left in the outbox for the next attempt.
       }
+    } catch (error) {
+      const permanent =
+        error instanceof ApiError &&
+        (error.isValidation || error.isNotFound || error.isForbidden);
+
+      if (permanent) {
+        // The whole chunk was rejected at the envelope level - an oversize
+        // batch, or a body the server could not parse. Resending it unchanged
+        // cannot work, so drop it rather than wedge the outbox behind it
+        // forever.
+        for (const entry of chunk) {
+          settled.add(entry.clientId);
+          dropped += 1;
+        }
+        continue;
+      }
+
+      /*
+       * No connection, or the server is down. Stop rather than grind through
+       * the remaining chunks: every one of them fails the same way, and the
+       * later chunks hold the newer answers, which must not reach the server
+       * before the earlier ones if the connection recovers mid-loop.
+       */
+      break;
     }
-
-    await removePending([...settled]);
-
-    return { sent, dropped, remaining: entries.length - settled.size };
-  } finally {
-    flushing = false;
   }
+
+  await removePending([...settled]);
+
+  return { sent, dropped, remaining: entries.length - settled.size };
 }

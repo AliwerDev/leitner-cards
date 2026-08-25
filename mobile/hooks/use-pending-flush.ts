@@ -17,29 +17,30 @@ import { flushPending, readPending, type FlushResult } from "@/lib/utils/pending
  * `flushing` toggled, which is exactly when an event is most likely to arrive.
  * The ref keeps one stable subscription that always calls current logic.
  *
- * MOUNTED TWICE, ON PURPOSE. The root layout mounts it so syncing is not
- * limited to whichever tab a user happens to open, and the decks and profile
- * screens mount it for the count they display. `busy` below is per-hook, so it
- * cannot coordinate those; the module-level guard inside flushPending is what
- * stops two mounts sending the same batch.
+ * MOUNTED SEVERAL TIMES, ON PURPOSE. The root layout mounts it so syncing is
+ * not limited to whichever tab a user happens to open, and the decks and
+ * profile screens mount it for the count they display. Nothing here
+ * coordinates those mounts: flushPending shares a single in-flight promise, so
+ * they collapse into one request and every caller gets its result.
  */
 export function usePendingFlush() {
   const queryClient = useQueryClient();
   const [count, setCount] = useState(0);
   const [flushing, setFlushing] = useState(false);
 
-  // Guards re-entry without making `flushing` a dependency of the flush
-  // itself: state updates are async, so two events in the same tick would
-  // both see `flushing === false`.
-  const busy = useRef(false);
-
   const refreshCount = useCallback(async () => {
     setCount((await readPending()).length);
   }, []);
 
-  const flush = useCallback(async (): Promise<FlushResult | null> => {
-    if (busy.current) return null;
-    busy.current = true;
+  /*
+   * No local re-entry guard. There used to be one, and it was actively
+   * harmful: it returned null to whichever caller arrived second, so a user
+   * tapping retry while a reconnect-triggered flush was in flight got no
+   * result at all and the UI concluded nothing had been sent. Deduplication
+   * belongs in flushPending, which shares one promise across every caller and
+   * hands them all the same real answer.
+   */
+  const flush = useCallback(async (): Promise<FlushResult> => {
     setFlushing(true);
 
     try {
@@ -58,7 +59,6 @@ export function usePendingFlush() {
       setCount(result.remaining);
       return result;
     } finally {
-      busy.current = false;
       setFlushing(false);
     }
   }, [queryClient]);

@@ -22,6 +22,7 @@ import { qk } from "@/lib/query/keys";
 import {
   enqueue,
   flushPending,
+  readPending,
   removePending,
   type PendingReview,
 } from "@/lib/utils/pending-reviews";
@@ -229,13 +230,25 @@ export function useStudySession(initialQueue: DueCard[], deckId?: number) {
    * durable copy and `failed` is only what this session happens to remember.
    * Everything in `failed` is in the outbox by construction now, and keeping
    * two retry paths is how they drift apart.
+   *
+   * WHAT COUNTS AS SUCCESS. The outbox being empty afterwards is the wrong
+   * test, and it made this button look broken twice over: a flush already
+   * running when the user tapped used to report `sent: 0` (fixed in
+   * flushPending, which now shares its promise), and an entry belonging to
+   * some other session would keep `remaining` above zero forever. What this
+   * button owns is THIS session's failures, so it re-reads the outbox and
+   * clears the ones that are no longer in it.
    */
   const retryFailed = useCallback(async () => {
     if (state.failed.length === 0) return;
 
-    const result = await flushPending();
-    if (result.remaining === 0) dispatch({ type: "clearFailures" });
-  }, [state.failed.length]);
+    await flushPending();
+
+    const stillQueued = new Set((await readPending()).map((entry) => entry.cardId));
+    if (!state.failed.some((item) => stillQueued.has(item.cardId))) {
+      dispatch({ type: "clearFailures" });
+    }
+  }, [state.failed]);
 
   const clearFeedback = useCallback(() => dispatch({ type: "clearFeedback" }), []);
 
