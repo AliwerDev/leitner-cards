@@ -1,6 +1,12 @@
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
+} from "@react-navigation/native";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -53,13 +59,58 @@ export default function RootLayout() {
         <ThemeProvider>
           <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
             <AuthProvider onReady={onReady}>
-              <ThemedStatusBar />
-              {ready ? <RootNavigator /> : null}
+              <ThemedNavigation>
+                <ThemedStatusBar />
+                {ready ? <RootNavigator /> : null}
+              </ThemedNavigation>
             </AuthProvider>
           </PersistQueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/**
+ * Hand our palette to React Navigation.
+ *
+ * The navigators paint their own container behind every screen, and that
+ * container reads `colors.background` from the React Navigation theme - not
+ * from ThemeProvider. Left at the default it is white, so each transition in
+ * dark mode showed a white frame at the edge of the outgoing screen for a few
+ * milliseconds. The per-navigator `contentStyle` covers the screen itself; this
+ * covers the container underneath it.
+ */
+function ThemedNavigation({ children }: { children: React.ReactNode }) {
+  const { colors, resolved } = useTheme();
+
+  // The native root view sits under every React view. On Android it defaults
+  // to white and shows through wherever the JS tree has not painted yet.
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(colors.canvas).catch(() => {
+      // Cosmetic only. A failure here is not worth interrupting the app for.
+    });
+  }, [colors.canvas]);
+
+  const base = resolved === "dark" ? DarkTheme : DefaultTheme;
+
+  const navigationTheme = useMemo(
+    () => ({
+      ...base,
+      colors: {
+        ...base.colors,
+        background: colors.canvas,
+        card: colors.surface,
+        text: colors.text,
+        border: colors.border,
+        primary: colors.accent,
+      },
+    }),
+    [base, colors],
+  );
+
+  return (
+    <NavigationThemeProvider value={navigationTheme}>{children}</NavigationThemeProvider>
   );
 }
 
@@ -83,12 +134,18 @@ function ThemedStatusBar() {
  */
 function RootNavigator() {
   const { isAuthenticated } = useAuth();
+  const { colors } = useTheme();
 
   return (
     <>
       {isAuthenticated ? <OutboxSync /> : null}
 
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.canvas },
+        }}
+      >
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="(tabs)" />
           {/* Full screen over the tabs: a session hides the tab bar. */}

@@ -30,6 +30,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Without this the tab scene falls back to React Navigation's default
+        // white, which flashes for a frame on every tab change in dark mode.
+        sceneStyle: { backgroundColor: colors.canvas },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSubtle,
         tabBarStyle: {

@@ -16,6 +16,9 @@ import type { ExpoConfig } from "expo/config";
  * setting, and it therefore applies to development and production builds only.
  * Expo Go already permits cleartext, so this changes nothing until you build.
  */
+/** palette.neutral50, the light canvas in lib/theme/palette.ts. */
+const LIGHT_CANVAS = "#f9fafb";
+
 const config: ExpoConfig = {
   name: "Magic Memorizer",
   slug: "magic-memorizer",
@@ -31,12 +34,19 @@ const config: ExpoConfig = {
     "expo-splash-screen",
     ["expo-build-properties", { android: { usesCleartextTraffic: true } }],
   ],
+  // The native window color, before any JS paints. Left unset it is white, and
+  // it shows through as a flash at launch and behind screen transitions. This
+  // is the light canvas; expo-system-ui switches it to the dark one as soon as
+  // the theme resolves in app/_layout.tsx.
+  backgroundColor: LIGHT_CANVAS,
   ios: {
     supportsTablet: false,
     bundleIdentifier: "uz.magicmemorizer.app",
+    backgroundColor: LIGHT_CANVAS,
   },
   android: {
     package: "uz.magicmemorizer.app",
+    backgroundColor: LIGHT_CANVAS,
     versionCode: 1,
     predictiveBackGestureEnabled: false,
     adaptiveIcon: {
