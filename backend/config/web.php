@@ -151,6 +151,7 @@ $config = [
         "GET  api/v1/reviews/due" => "api/v1/review/due",
         "GET  api/v1/reviews/count" => "api/v1/review/count",
         "POST api/v1/reviews/reset" => "api/v1/review/reset",
+        "POST api/v1/reviews/batch" => "api/v1/review/batch",
         "POST api/v1/reviews" => "api/v1/review/create",
 
         // The daily rule precedes the bare one so /stats/daily is not parsed

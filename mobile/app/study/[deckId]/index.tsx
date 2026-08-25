@@ -6,7 +6,7 @@ import { queueKey } from "@/components/study/queue-key";
 import { StudyEmpty } from "@/components/study/study-empty";
 import { ErrorState, LoadingState } from "@/components/ui";
 import { useDeck } from "@/hooks/use-decks";
-import { useDueCards } from "@/hooks/use-due";
+import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { ALL_DUE_CAP } from "@/lib/api/endpoints/reviews";
 import { ApiError } from "@/lib/api/error";
 import { deckAccent } from "@/lib/domain/deck-color";
@@ -29,7 +29,7 @@ export default function DeckStudyScreen() {
   const { colors, resolved } = useTheme();
 
   const deckQuery = useDeck(deckId);
-  const dueQuery = useDueCards(deckId);
+  const { cards, count, hasData, isRestoring, online, query } = useOfflineQueue(deckId);
 
   // Rendered by every branch below, so the header and its back button are
   // there while the queue is still loading and when it comes back empty. Once
@@ -37,7 +37,11 @@ export default function DeckStudyScreen() {
   // counter, so this is only ever the pre-session fallback.
   const header = <Stack.Screen options={{ title: uz.study.title, gestureEnabled: false }} />;
 
-  if (dueQuery.isPending) {
+  /*
+   * "No data anywhere" rather than "a request is in flight" - see the same
+   * branch in app/study/index.tsx for why the two had to be separated.
+   */
+  if (isRestoring || (query.isPending && !hasData)) {
     return (
       <>
         {header}
@@ -46,18 +50,20 @@ export default function DeckStudyScreen() {
     );
   }
 
-  if (dueQuery.error) {
+  // A failed request with a stored queue behind it is handled by the session's
+  // offline banner, not by taking the screen away.
+  if (query.error && !hasData) {
     return (
       <>
         {header}
         <Screen topInset={false}>
           <ErrorState
             message={
-              dueQuery.error instanceof ApiError
-                ? apiErrorMessage(dueQuery.error)
+              query.error instanceof ApiError
+                ? apiErrorMessage(query.error)
                 : uz.errors.unexpected
             }
-            onRetry={() => void dueQuery.refetch()}
+            onRetry={() => void query.refetch()}
             retryLabel={uz.common.retry}
           />
         </Screen>
@@ -65,7 +71,7 @@ export default function DeckStudyScreen() {
     );
   }
 
-  if (dueQuery.data.cards.length === 0) {
+  if (cards.length === 0) {
     return (
       <>
         {header}
@@ -90,12 +96,14 @@ export default function DeckStudyScreen() {
     <>
       {header}
       <StudySession
-        key={queueKey(dueQuery.data.cards)}
-        cards={dueQuery.data.cards}
-        queueWasFull={dueQuery.data.count >= ALL_DUE_CAP}
+        key={queueKey(cards)}
+        cards={cards}
+        queueWasFull={count >= ALL_DUE_CAP}
+        deckId={deckId}
+        offline={!online}
         accent={accent}
         onFinish={finish}
-        onContinue={() => void dueQuery.refetch()}
+        onContinue={() => void query.refetch()}
       />
     </>
   );

@@ -6,16 +6,25 @@
 //   1. The web calls a server action; here it is a direct API call, and the
 //      returned due_count is written into the query cache so the tab badge
 //      stays live without a request per answer.
-//   2. A failed write is ALSO appended to a durable outbox, because the OS can
-//      kill this app between an answer and its retry. See
-//      lib/utils/pending-reviews.ts for that trade.
+//   2. EVERY answer is appended to a durable outbox before it is sent, because
+//      the OS can kill this app between an answer and its response. See
+//      lib/utils/pending-reviews.ts.
+//   3. The cached queue and the badge are edited locally as answers are given,
+//      which is what makes a session work with no network at all. See
+//      lib/query/offline-queue.ts.
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useReducer } from "react";
 import { submitReview } from "@/lib/api/endpoints/reviews";
 import { nextLevel } from "@/lib/domain/level";
+import { decrementCachedDueCount, removeFromCachedQueues } from "@/lib/query/offline-queue";
 import { qk } from "@/lib/query/keys";
-import { addPending } from "@/lib/utils/pending-reviews";
+import {
+  enqueue,
+  flushPending,
+  removePending,
+  type PendingReview,
+} from "@/lib/utils/pending-reviews";
 import type { CardLevel, DueCard } from "@/types/api";
 
 /**
@@ -127,7 +136,12 @@ function reducer(state: StudyState, action: Action): StudyState {
   }
 }
 
-export function useStudySession(initialQueue: DueCard[]) {
+/**
+ * `deckId` is only used to decrement the deck-scoped due count alongside the
+ * account-wide one. Omitted for an all-decks session, where there is no
+ * deck-scoped key to keep current.
+ */
+export function useStudySession(initialQueue: DueCard[], deckId?: number) {
   const queryClient = useQueryClient();
 
   const [state, dispatch] = useReducer(reducer, {
@@ -149,11 +163,21 @@ export function useStudySession(initialQueue: DueCard[]) {
    * POST /reviews already returns the account-wide due_count, so writing it
    * into the cache keeps the Study tab live at no request cost. Invalidating
    * instead would fire a request per answer.
+   *
+   * The clientId comes from the outbox entry written a moment earlier, so this
+   * request and any later retry of it are the same answer as far as the server
+   * is concerned. Without it, a slow response followed by a background flush
+   * writes the review twice.
    */
   const post = useCallback(
-    async (cardId: number, wasCorrect: boolean): Promise<boolean> => {
+    async (entry: PendingReview): Promise<boolean> => {
       try {
-        const result = await submitReview({ cardId, wasCorrect });
+        const result = await submitReview({
+          cardId: entry.cardId,
+          wasCorrect: entry.wasCorrect,
+          reviewedAt: Math.floor(entry.at / 1000),
+          clientId: entry.clientId,
+        });
         queryClient.setQueryData(qk.dueCount(undefined), { due_count: result.due_count });
         return true;
       } catch {
@@ -171,33 +195,47 @@ export function useStudySession(initialQueue: DueCard[]) {
       // Advance first; the write follows.
       dispatch({ type: "answer", wasCorrect });
 
-      void post(card.id, wasCorrect).then((ok) => {
-        if (!ok) {
+      /*
+       * Edit the cache immediately and unconditionally, before the request is
+       * even attempted. Offline these are the only thing keeping the badge and
+       * the stored queue honest; online they are overwritten by the
+       * authoritative due_count a moment later, so there is nothing to undo.
+       */
+      removeFromCachedQueues(queryClient, card.id);
+      decrementCachedDueCount(queryClient, deckId);
+
+      /*
+       * Enqueue, send, then dequeue on success. The old code sent first and
+       * only enqueued on failure, which lost the answer when the OS killed the
+       * app inside the request. The cost of this order is one disk write per
+       * answer; the benefit is that no window exists in which an answered card
+       * lives only in memory.
+       */
+      void enqueue(card.id, wasCorrect).then(async (entry) => {
+        if (await post(entry)) {
+          await removePending([entry.clientId]);
+        } else {
           dispatch({ type: "recordFailure", cardId: card.id, wasCorrect });
-          // Also persist, so the answer survives the app being killed.
-          void addPending(card.id, wasCorrect);
         }
       });
     },
-    [state.queue, state.index, state.phase, post],
+    [state.queue, state.index, state.phase, post, queryClient, deckId],
   );
 
+  /**
+   * The summary's retry button.
+   *
+   * Drains the outbox rather than resending from `failed`: the outbox is the
+   * durable copy and `failed` is only what this session happens to remember.
+   * Everything in `failed` is in the outbox by construction now, and keeping
+   * two retry paths is how they drift apart.
+   */
   const retryFailed = useCallback(async () => {
-    const pending = state.failed;
-    if (pending.length === 0) return;
+    if (state.failed.length === 0) return;
 
-    dispatch({ type: "clearFailures" });
-
-    const results = await Promise.all(
-      pending.map(async (item) => ({ item, ok: await post(item.cardId, item.wasCorrect) })),
-    );
-
-    for (const { item, ok } of results) {
-      if (!ok) {
-        dispatch({ type: "recordFailure", cardId: item.cardId, wasCorrect: item.wasCorrect });
-      }
-    }
-  }, [state.failed, post]);
+    const result = await flushPending();
+    if (result.remaining === 0) dispatch({ type: "clearFailures" });
+  }, [state.failed.length]);
 
   const clearFeedback = useCallback(() => dispatch({ type: "clearFeedback" }), []);
 

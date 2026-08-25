@@ -25,6 +25,10 @@ export type StudySessionProps = {
   queueWasFull: boolean;
   /** The deck's accent, when the session is scoped to one deck. */
   accent: string;
+  /** Scopes the local due-count edit. Omitted for an all-decks session. */
+  deckId?: number;
+  /** No connection: the session still works, and the banner says why. */
+  offline?: boolean;
   onFinish: () => void;
   onContinue: () => void;
 };
@@ -33,11 +37,13 @@ export function StudySession({
   cards,
   queueWasFull,
   accent,
+  deckId,
+  offline = false,
   onFinish,
   onContinue,
 }: StudySessionProps) {
   const { colors, space } = useTheme();
-  const session = useStudySession(cards);
+  const session = useStudySession(cards, deckId);
   const { state, currentCard } = session;
 
   useAnswerFeedback(state.feedback, session.clearFeedback);
@@ -89,7 +95,12 @@ export function StudySession({
           />
         </View>
 
-        {state.failed.length > 0 ? (
+        {/* Offline is the explanation; unsaved answers are the consequence.
+            Showing both at once would say the same thing twice, so the
+            offline notice wins while it applies. */}
+        {offline ? (
+          <Alert tone="info" message={uz.mobile.offlineStudyBody} />
+        ) : state.failed.length > 0 ? (
           <Alert tone="warning" message={uz.study.unsavedAnswers(state.failed.length)} />
         ) : null}
 

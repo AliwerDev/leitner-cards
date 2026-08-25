@@ -2,7 +2,13 @@
 // Keep in sync manually. See mobile/README.md.
 
 import { apiFetch } from "../client";
-import type { DueCountResponse, DueResponse, ResetResponse, ReviewResponse } from "@/types/api";
+import type {
+  CardLevel,
+  DueCountResponse,
+  DueResponse,
+  ResetResponse,
+  ReviewResponse,
+} from "@/types/api";
 
 /**
  * Asks for the whole due queue rather than a page of it.
@@ -45,12 +51,71 @@ export function getDueCount(deckId?: number) {
   return apiFetch<DueCountResponse>("/reviews/count", { query: { deckId } });
 }
 
-/** Returns 201. The due_count in the response is account-wide. */
-export function submitReview(input: { cardId: number; wasCorrect: boolean }) {
+/**
+ * Returns 201 for a new answer, 200 when `clientId` matched one already
+ * recorded. The due_count in the response is account-wide.
+ *
+ * `reviewedAt` and `clientId` are optional and only the offline path sends
+ * them: the first preserves the real answer time so the Leitner interval is
+ * measured from when the card was recalled, the second makes a retry safe to
+ * send twice. The web passes neither.
+ */
+export function submitReview(input: {
+  cardId: number;
+  wasCorrect: boolean;
+  /** Unix SECONDS, not milliseconds. */
+  reviewedAt?: number;
+  clientId?: string;
+}) {
   return apiFetch<ReviewResponse>("/reviews", { method: "POST", body: input });
 }
 
 /** Sets the card back to level 1, due now. Writes no history row. */
 export function resetCard(cardId: number) {
   return apiFetch<ResetResponse>("/reviews/reset", { method: "POST", body: { cardId } });
+}
+
+/*
+ * Everything above this point matches frontend/src/lib/api/endpoints/reviews.ts.
+ * Below is mobile-only: the web has no outbox, so it has no batch to flush.
+ */
+
+export type BatchReviewInput = {
+  cardId: number;
+  wasCorrect: boolean;
+  /** Unix SECONDS - the backend stores every timestamp as a second integer. */
+  reviewedAt: number;
+  clientId: string;
+};
+
+/**
+ * One item's outcome. Three statuses, because the outbox has three responses:
+ * applied and duplicate both mean "it is on the server, drop it"; rejected
+ * means "it will never succeed, drop it"; failed means "keep it and retry".
+ */
+export type BatchReviewResult = {
+  clientId: string | null;
+  status: "applied" | "duplicate" | "rejected" | "failed";
+  level_after?: CardLevel;
+  error?: string;
+};
+
+export type BatchReviewResponse = {
+  /** Account-wide, computed once after the whole batch. */
+  due_count: number;
+  results: BatchReviewResult[];
+};
+
+/**
+ * Flush a slice of the outbox.
+ *
+ * Always 200 when the request itself was understood, whatever the items did -
+ * the HTTP code reports the transport, and the per-item status reports the
+ * outcome. Send at most MAX_BATCH (100) items, oldest first.
+ */
+export function submitReviewBatch(reviews: BatchReviewInput[]) {
+  return apiFetch<BatchReviewResponse>("/reviews/batch", {
+    method: "POST",
+    body: { reviews },
+  });
 }

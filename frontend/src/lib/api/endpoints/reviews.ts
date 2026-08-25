@@ -44,8 +44,22 @@ export function getDueCount(deckId?: number) {
   return apiFetch<DueCountResponse>("/reviews/count", { query: { deckId } });
 }
 
-/** Returns 201. The due_count in the response is account-wide. */
-export function submitReview(input: { cardId: number; wasCorrect: boolean }) {
+/**
+ * Returns 201 for a new answer, 200 when `clientId` matched one already
+ * recorded. The due_count in the response is account-wide.
+ *
+ * `reviewedAt` and `clientId` are optional and only the offline path sends
+ * them: the first preserves the real answer time so the Leitner interval is
+ * measured from when the card was recalled, the second makes a retry safe to
+ * send twice. The web passes neither.
+ */
+export function submitReview(input: {
+  cardId: number;
+  wasCorrect: boolean;
+  /** Unix SECONDS, not milliseconds. */
+  reviewedAt?: number;
+  clientId?: string;
+}) {
   return apiFetch<ReviewResponse>("/reviews", { method: "POST", body: input });
 }
 

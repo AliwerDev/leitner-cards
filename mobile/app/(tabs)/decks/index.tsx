@@ -5,6 +5,8 @@ import { Screen } from "@/components/layout/screen";
 import { DeckCard } from "@/components/decks/deck-card";
 import { Alert, Button, EmptyState, ErrorState, LoadingState, Text } from "@/components/ui";
 import { useDeckCounts, useDecks } from "@/hooks/use-decks";
+import { usePrefetchDueQueue } from "@/hooks/use-due";
+import { usePendingFlush } from "@/hooks/use-pending-flush";
 import { ApiError } from "@/lib/api/error";
 import { useAuth } from "@/lib/auth/session-context";
 import { canCreateDeck, decksLabel, deckLimitMessage } from "@/lib/domain/quota";
@@ -21,6 +23,14 @@ export default function DecksScreen() {
   // Hooks cannot sit behind the early returns below, so the counts are
   // requested with whatever the list currently holds.
   const { counts, refetch: refetchCounts } = useDeckCounts((data ?? []).map((deck) => deck.id));
+
+  // This screen is where a user stands before they tap Study, and it is
+  // normally online when they do. Warming the queue here is what puts it on
+  // disk in time for a session started underground.
+  usePrefetchDueQueue();
+
+  // The count only; the flush itself is driven from the root layout.
+  const { count: pendingCount, flushing, flush } = usePendingFlush();
 
   // A pull refreshes the list AND every card's numbers. The counts are a
   // separate query per deck, so refetching the list alone would update the
@@ -85,6 +95,28 @@ export default function DecksScreen() {
 
             {quota && !canCreateDeck(quota) ? (
               <Alert tone="warning" message={deckLimitMessage(quota)} />
+            ) : null}
+
+            {/* Where a user lands when they come back online, so it is where
+                the outbox reports itself. Tapping retries immediately rather
+                than waiting for the next AppState or connectivity event. */}
+            {pendingCount > 0 ? (
+              <Alert
+                tone="info"
+                message={
+                  flushing ? uz.mobile.pendingSending : uz.mobile.syncPending(pendingCount)
+                }
+                action={
+                  flushing ? undefined : (
+                    <Button
+                      label={uz.mobile.retry}
+                      variant="outline"
+                      size="sm"
+                      onPress={() => void flush()}
+                    />
+                  )
+                }
+              />
             ) : null}
           </View>
         }

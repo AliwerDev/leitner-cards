@@ -16,6 +16,12 @@ import { flushPending, readPending, type FlushResult } from "@/lib/utils/pending
  * Listing it would tear down and re-add both subscriptions every time
  * `flushing` toggled, which is exactly when an event is most likely to arrive.
  * The ref keeps one stable subscription that always calls current logic.
+ *
+ * MOUNTED TWICE, ON PURPOSE. The root layout mounts it so syncing is not
+ * limited to whichever tab a user happens to open, and the decks and profile
+ * screens mount it for the count they display. `busy` below is per-hook, so it
+ * cannot coordinate those; the module-level guard inside flushPending is what
+ * stops two mounts sending the same batch.
  */
 export function usePendingFlush() {
   const queryClient = useQueryClient();

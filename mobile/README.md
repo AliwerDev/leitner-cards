@@ -128,10 +128,30 @@ o'qiladi va proksi keraksiz.
 yangilaydi. Bu yerda uning o'rnini `lib/auth/bootstrap.ts` (sovuq ishga
 tushirishda) va `client.ts` dagi 401 qayta urinishi egallaydi.
 
-**Offline navbat.** Yuborilmagan javoblar AsyncStorage'ga yoziladi. Web ularni
-faqat xotirada saqlaydi; telefonda OS ilovani ogohlantirmasdan yopadi, va
-javoblarni yo'qotish ularni ikki marta sanashdan yomonroq. Batafsil izoh
-`lib/utils/pending-reviews.ts` da.
+**Oflayn o'qish.** Sessiya internetsiz ochiladi va to'liq tugaydi. Uch qism:
+
+1. **Navbat diskda.** Query cache `PersistQueryClientProvider` orqali
+   AsyncStorage'ga yoziladi (`lib/query/persist.ts`). Faqat `due`, `dueCount`,
+   `decks`, `cards`, `stats` saqlanadi — sessiya hech qachon emas, u user
+   obyektini olib yuradi. Due query'lar `gcTime` ni bir haftaga ko'taradi, aks
+   holda cache ilova cho'ntakda turganda yig'ishtiriladi va persister'da
+   yozadigan narsa qolmaydi.
+2. **Javoblar navbati.** Har bir javob yuborilishidan **oldin** AsyncStorage'ga
+   yoziladi, muvaffaqiyatda o'chiriladi (`lib/utils/pending-reviews.ts`). Har
+   entry `clientId` olib yuradi; server tomonida `review_history` da
+   `UNIQUE (user_id, client_id)` turibdi, shuning uchun qayta yuborish
+   dublikat yaratmaydi. `POST /reviews/batch` bilan bo'lak-bo'lak yuboriladi.
+3. **Lokal cache tahriri.** Javob berilgan karta saqlangan navbatdan
+   chiqariladi va badge kamayadi (`lib/query/offline-queue.ts`). Bu lokal
+   qoplama; haqiqiy javob kelishi bilan ustidan yoziladi.
+
+Offline javob **o'z vaqti bilan** yoziladi (`reviewedAt`), server vaqti bilan
+emas: Leitner intervali karta eslab qolingan paytdan o'lchanadi, aks holda
+jadval har offline sessiyadan keyin cho'zilib borardi.
+
+**Ma'lum cheklov:** Android'da AsyncStorage 6 MB. Shu sababdan fon prefetch
+navbatning faqat dastlabki 200 tasini isitadi (`hooks/use-due.ts`). SQLite
+tanlanmaganining haqiqiy narxi shu.
 
 **Tema — JS obyekti**, CSS o'zgaruvchilari emas. OKLCH qiymatlar
 `scripts/oklch-to-hex.mjs` orqali hex'ga aylantirilib `lib/theme/palette.ts` ga
@@ -186,7 +206,7 @@ mobile/
 ├── lib/
 │   ├── api/                 # client, config, endpoints
 │   ├── auth/                # storage, refresh mutex, bootstrap, context
-│   ├── query/               # QueryClient va kalitlar
+│   ├── query/               # QueryClient, kalitlar, persist, offline-queue
 │   ├── domain/              # sof mantiq (asosan nusxa)
 │   ├── i18n/                # uz.ts
 │   ├── theme/               # palette, tokens, themes, context

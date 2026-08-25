@@ -73,12 +73,43 @@ class ReviewService
      * Records one answer: moves the card a level up or down, reschedules it,
      * and appends a history row. Atomic - either both happen or neither.
      *
+     * $at is the moment the answer was GIVEN, which is not always the moment
+     * the request arrives: an offline client sends the time it recorded, and
+     * the schedule is computed from that. See ReviewForm for why.
+     *
+     * $clientId makes the write idempotent. When one is supplied and an answer
+     * already exists under it, nothing is applied and the existing row is
+     * returned with `duplicate` set.
+     *
      * @throws \yii\web\NotFoundHttpException if the card is not in a deck the user owns
      */
-    public function recordAnswer(int $userId, int $cardId, bool $wasCorrect, ?int $at = null): ReviewResult
-    {
+    public function recordAnswer(
+        int $userId,
+        int $cardId,
+        bool $wasCorrect,
+        ?int $at = null,
+        ?string $clientId = null
+    ): ReviewResult {
         $at ??= time();
         $card = Card::findOwned($cardId, $userId);
+
+        /*
+         * A client resending an answer it already delivered must be told "yes,
+         * that landed" rather than have it applied twice.
+         *
+         * This cheap read catches the ordinary case. The IntegrityException
+         * catch below catches the one that matters - two flushes racing after
+         * the app was backgrounded and foregrounded quickly - where both
+         * requests pass this check before either commits. The unique index is
+         * the real guarantee; this read only spares the common case a rollback.
+         */
+        if ($clientId !== null) {
+            $existing = $this->historyByClientId($userId, $clientId);
+
+            if ($existing !== null) {
+                return $this->replayOf($userId, $card, $existing);
+            }
+        }
 
         $transaction = Yii::$app->db->beginTransaction();
 
@@ -104,6 +135,7 @@ class ReviewService
                 'level_after' => $after->value,
                 'was_correct' => $wasCorrect,
                 'reviewed_at' => $at,
+                'client_id' => $clientId,
             ]);
 
             if (!$history->save()) {
@@ -111,6 +143,21 @@ class ReviewService
             }
 
             $transaction->commit();
+        } catch (IntegrityException $e) {
+            $transaction->rollBack();
+
+            // Lost the race described above: another request wrote this same
+            // client id first. Its row is authoritative, and re-applying the
+            // level transition is exactly what the index just prevented.
+            if ($clientId !== null) {
+                $existing = $this->historyByClientId($userId, $clientId);
+
+                if ($existing !== null) {
+                    return $this->replayOf($userId, $card, $existing);
+                }
+            }
+
+            throw $e;
         } catch (\Throwable $e) {
             $transaction->rollBack();
 
@@ -118,6 +165,41 @@ class ReviewService
         }
 
         return new ReviewResult($progress, $history, $before, $after, $wasCorrect);
+    }
+
+    /**
+     * The history row a client id already wrote, if any.
+     */
+    private function historyByClientId(int $userId, string $clientId): ?ReviewHistory
+    {
+        return ReviewHistory::find()
+            ->andWhere(['user_id' => $userId, 'client_id' => $clientId])
+            ->one();
+    }
+
+    /**
+     * The result a duplicate submission gets: the history row that actually
+     * landed, plus the card's progress as it stands now.
+     *
+     * `progress` is deliberately the CURRENT row rather than a reconstruction
+     * of how it looked just after $existing was written. The client is asking
+     * "did this land?" so it can drop the entry, and the honest answer to
+     * "where is this card now" is where it is now - it may have been answered
+     * again since, here or on another device.
+     */
+    private function replayOf(int $userId, Card $card, ReviewHistory $existing): ReviewResult
+    {
+        $progress = CardProgress::findOne(['user_id' => $userId, 'card_id' => $card->id])
+            ?? $this->progressFor($userId, $card);
+
+        return new ReviewResult(
+            $progress,
+            $existing,
+            CardLevel::from($existing->level_before),
+            CardLevel::from($existing->level_after),
+            (bool) $existing->was_correct,
+            true,
+        );
     }
 
     /**

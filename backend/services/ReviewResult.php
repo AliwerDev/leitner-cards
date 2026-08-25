@@ -17,6 +17,14 @@ final class ReviewResult
         public readonly CardLevel $levelBefore,
         public readonly CardLevel $levelAfter,
         public readonly bool $wasCorrect,
+        /**
+         * True when this answer had already been recorded and was recognised
+         * by its client id rather than applied a second time.
+         *
+         * Last and defaulted so the ordinary path constructs a result exactly
+         * as it always did.
+         */
+        public readonly bool $duplicate = false,
     ) {
     }
 

@@ -311,6 +311,12 @@ export type ReviewResponse = {
   progress: CardProgress;
   /** Account-wide, ignoring the deck being studied. */
   due_count: number;
+  /**
+   * True when the request carried a clientId that had already been recorded,
+   * so nothing was applied a second time. Always false without one, which is
+   * every request the web makes.
+   */
+  duplicate: boolean;
 };
 export type ResetResponse = { progress: CardProgress; due_count: number };
 export type MessageResponse = { message: string };

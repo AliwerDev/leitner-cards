@@ -1,12 +1,14 @@
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { usePendingFlush } from "@/hooks/use-pending-flush";
 import { AuthProvider, useAuth } from "@/lib/auth/session-context";
 import { connectQueryToDevice, createQueryClient } from "@/lib/query/client";
+import { persistOptions } from "@/lib/query/persist";
 import { ThemeProvider, useTheme } from "@/lib/theme/theme-context";
 
 /**
@@ -22,8 +24,14 @@ void SplashScreen.preventAutoHideAsync();
  * Provider order is load-bearing:
  *   GestureHandlerRootView must be the outermost native view.
  *   ThemeProvider is above QueryClientProvider so any error UI is themed.
- *   AuthProvider is inside QueryClientProvider because signing out clears the
+ *   AuthProvider is inside the query provider because signing out clears the
  *     query cache, so it needs the client.
+ *
+ *   PersistQueryClientProvider replaces QueryClientProvider. It does NOT gate
+ *     rendering on the restore: children mount immediately and queries report
+ *     isRestoring until the disk read finishes. The splash is already held by
+ *     AuthProvider's onReady, which waits on SecureStore - a strictly slower
+ *     read - so restoration adds nothing to first paint.
  */
 export default function RootLayout() {
   const queryClient = useMemo(() => createQueryClient(), []);
@@ -43,12 +51,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
+          <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
             <AuthProvider onReady={onReady}>
               <ThemedStatusBar />
               {ready ? <RootNavigator /> : null}
             </AuthProvider>
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -77,17 +85,42 @@ function RootNavigator() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isAuthenticated}>
-        <Stack.Screen name="(tabs)" />
-        {/* Full screen over the tabs: a session hides the tab bar. */}
-        <Stack.Screen name="study" />
-        <Stack.Screen name="(modals)" options={{ presentation: "modal", headerShown: false }} />
-      </Stack.Protected>
+    <>
+      {isAuthenticated ? <OutboxSync /> : null}
 
-      <Stack.Protected guard={!isAuthenticated}>
-        <Stack.Screen name="(auth)" />
-      </Stack.Protected>
-    </Stack>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Protected guard={isAuthenticated}>
+          <Stack.Screen name="(tabs)" />
+          {/* Full screen over the tabs: a session hides the tab bar. */}
+          <Stack.Screen name="study" />
+          <Stack.Screen
+            name="(modals)"
+            options={{ presentation: "modal", headerShown: false }}
+          />
+        </Stack.Protected>
+
+        <Stack.Protected guard={!isAuthenticated}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+      </Stack>
+    </>
   );
+}
+
+/**
+ * Drain the answer outbox app-wide.
+ *
+ * It used to mount only on the profile tab, so a user who studied offline and
+ * never opened profile kept their answers on the device indefinitely. This is
+ * a hook with no UI, so it lives at the root; profile still calls it for the
+ * count it displays, and the module-level guard inside flushPending keeps the
+ * two mounts from sending the same batch twice.
+ *
+ * Gated on an authenticated session so a signed-out app never fires a request
+ * that can only 401.
+ */
+function OutboxSync() {
+  usePendingFlush();
+
+  return null;
 }

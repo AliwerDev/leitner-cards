@@ -5,7 +5,7 @@ import { StudySession } from "@/components/study/study-session";
 import { queueKey } from "@/components/study/queue-key";
 import { StudyEmpty } from "@/components/study/study-empty";
 import { ErrorState, LoadingState } from "@/components/ui";
-import { useDueCards } from "@/hooks/use-due";
+import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { ALL_DUE_CAP } from "@/lib/api/endpoints/reviews";
 import { ApiError } from "@/lib/api/error";
 import { apiErrorMessage } from "@/lib/i18n/api-errors";
@@ -28,13 +28,22 @@ export default function StudyScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const { data, isPending, error, refetch } = useDueCards();
+  const { cards, count, hasData, isRestoring, online, query } = useOfflineQueue();
 
   // Rendered by every branch, so the header and its back button are there
   // while the queue is still loading and when it comes back empty.
   const header = <Stack.Screen options={{ title: uz.study.title, gestureEnabled: false }} />;
 
-  if (isPending) {
+  /*
+   * The loading branch is "no data anywhere", not "a request is in flight".
+   * Those diverged the moment the cache started surviving a cold start: a
+   * request is always in flight here because the queue is staleTime 0, and
+   * gating the session on it meant an offline user watched a spinner over a
+   * queue that was on disk the whole time. isRestoring covers the few hundred
+   * milliseconds before that disk read lands, so the screen does not flash
+   * "no cards" and then fill in.
+   */
+  if (isRestoring || (query.isPending && !hasData)) {
     return (
       <>
         {header}
@@ -43,14 +52,24 @@ export default function StudyScreen() {
     );
   }
 
-  if (error) {
+  /*
+   * An error with data behind it is not an error the user needs to see. It is
+   * almost always ApiError(0, "network"), and the answer to it is the session
+   * plus its offline banner. ErrorState is reserved for a failed request with
+   * nothing to study - the only case where the user genuinely cannot proceed.
+   */
+  if (query.error && !hasData) {
     return (
       <>
         {header}
         <Screen topInset={false}>
           <ErrorState
-            message={error instanceof ApiError ? apiErrorMessage(error) : uz.errors.unexpected}
-            onRetry={() => void refetch()}
+            message={
+              query.error instanceof ApiError
+                ? apiErrorMessage(query.error)
+                : uz.errors.unexpected
+            }
+            onRetry={() => void query.refetch()}
             retryLabel={uz.common.retry}
           />
         </Screen>
@@ -58,7 +77,7 @@ export default function StudyScreen() {
     );
   }
 
-  if (data.cards.length === 0) {
+  if (cards.length === 0) {
     return (
       <>
         {header}
@@ -82,13 +101,17 @@ export default function StudyScreen() {
       {header}
       <StudySession
         // Remount on a new queue so the state machine starts clean rather than
-        // resuming at a stale index.
-        key={queueKey(data.cards)}
-        cards={data.cards}
-        queueWasFull={data.count >= ALL_DUE_CAP}
+        // resuming at a stale index. Note that `cards` is filtered against the
+        // outbox, so this key would also change if that filter were reactive -
+        // it is a mount-time snapshot precisely so a session cannot be
+        // remounted out from under the user mid-answer.
+        key={queueKey(cards)}
+        cards={cards}
+        queueWasFull={count >= ALL_DUE_CAP}
+        offline={!online}
         accent={colors.accent}
         onFinish={finish}
-        onContinue={() => void refetch()}
+        onContinue={() => void query.refetch()}
       />
     </>
   );

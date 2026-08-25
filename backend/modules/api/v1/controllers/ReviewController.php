@@ -9,6 +9,8 @@ use app\modules\api\v1\models\ReviewForm;
 use app\services\ReviewService;
 use Yii;
 use yii\filters\VerbFilter;
+use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
 
 /**
  * The study loop: what to review now, and recording answers.
@@ -28,6 +30,16 @@ class ReviewController extends BaseApiController
      */
     private const ALL_LIMIT_CAP = 2000;
 
+    /**
+     * Largest batch accepted in one flush request.
+     *
+     * The outbox caps at 500 entries, so a worst-case flush is four requests.
+     * Each item takes a row lock on the card's progress, which makes a batch a
+     * transaction budget as much as a payload one: 100 keeps the longest
+     * lock-holding request inside a worker's timeout.
+     */
+    private const MAX_BATCH = 100;
+
     private ReviewService $reviews;
 
     public function init(): void
@@ -46,6 +58,7 @@ class ReviewController extends BaseApiController
                     'due'    => ['GET', 'HEAD'],
                     'count'  => ['GET', 'HEAD'],
                     'create' => ['POST'],
+                    'batch'  => ['POST'],
                     'reset'  => ['POST'],
                 ],
             ],
@@ -98,15 +111,158 @@ class ReviewController extends BaseApiController
         }
 
         $userId = (int) Yii::$app->user->id;
-        $result = $this->reviews->recordAnswer($userId, $form->cardId(), $form->isCorrect());
+        $result = $this->reviews->recordAnswer(
+            $userId,
+            $form->cardId(),
+            $form->isCorrect(),
+            $form->reviewedAt(),
+            $form->clientId(),
+        );
 
-        Yii::$app->response->statusCode = 201;
+        /*
+         * A duplicate is a SUCCESS, not a 409.
+         *
+         * The only caller that sends a clientId is an outbox retrying
+         * something it is not sure landed. A 4xx there reads as "permanent
+         * failure, drop it" - right by accident - or, worse, as a bug to be
+         * retried forever. 200 with `duplicate: true` says exactly what
+         * happened and still carries the due_count the badge needs.
+         *
+         * The field is present on every response, always false on the web
+         * path, so the client has one shape rather than two.
+         */
+        Yii::$app->response->statusCode = $result->duplicate ? 200 : 201;
 
         return [
             'review' => $result->history->toArray(),
             'progress' => $result->progress->toArray(),
             'due_count' => $this->reviews->dueCount($userId),
+            'duplicate' => $result->duplicate,
         ];
+    }
+
+    /**
+     * POST /api/v1/reviews/batch   body: {reviews: [{cardId, wasCorrect, reviewedAt, clientId}, ...]}
+     *
+     * The flush path for the mobile outbox. Collapses what used to be one
+     * request per queued answer into one request per hundred.
+     *
+     * PER ITEM, NOT ONE TRANSACTION. A single transaction across the batch
+     * means one deleted card rolls back every good answer beside it, and
+     * leaves the client no way to drop the ones that landed - it would have to
+     * resend all of them forever, because the bad one never goes away. Each
+     * item gets its own transaction inside recordAnswer(), and its own result.
+     *
+     * ORDER IS LOAD-BEARING. Two answers to the same card must apply
+     * oldest-first or the ladder lands wrong: correct-then-wrong leaves the
+     * card at level 1, wrong-then-correct at level 2. The client sends them in
+     * order, and the sort below is a safety net - batching by card id rather
+     * than by time is an easy mistake to make and an invisible one to debug.
+     *
+     * The HTTP status is 200 whenever the request itself was understood, even
+     * when every item was rejected. The transport succeeded; the per-item
+     * results carry the outcomes.
+     */
+    public function actionBatch(): array
+    {
+        $items = Yii::$app->request->getBodyParams()['reviews'] ?? null;
+
+        if (!is_array($items) || $items === []) {
+            return $this->validationError(['reviews' => ['Javoblar ro\'yxati bo\'sh.']]);
+        }
+
+        if (count($items) > self::MAX_BATCH) {
+            return $this->validationError([
+                'reviews' => ['Bir so\'rovda ' . self::MAX_BATCH . ' tadan ko\'p javob yuborib bo\'lmaydi.'],
+            ]);
+        }
+
+        $userId = (int) Yii::$app->user->id;
+
+        /*
+         * Sort by reviewedAt, with the original position as the tiebreaker.
+         * usort is not stable for equal keys, and items without a timestamp
+         * must keep their relative order rather than being shuffled.
+         */
+        $ordered = [];
+
+        foreach (array_values($items) as $index => $item) {
+            $ordered[] = ['index' => $index, 'item' => $item];
+        }
+
+        usort($ordered, static function (array $a, array $b): int {
+            $left = is_array($a['item']) ? (int) ($a['item']['reviewedAt'] ?? 0) : 0;
+            $right = is_array($b['item']) ? (int) ($b['item']['reviewedAt'] ?? 0) : 0;
+
+            return ($left <=> $right) ?: ($a['index'] <=> $b['index']);
+        });
+
+        $results = [];
+
+        foreach ($ordered as $entry) {
+            $results[] = $this->applyBatchItem($userId, $entry['item']);
+        }
+
+        return [
+            // One count for the whole batch, not one per item: the client only
+            // needs the number it should show, and recomputing it per answer
+            // costs a COUNT query each time.
+            'due_count' => $this->reviews->dueCount($userId),
+            'results' => $results,
+        ];
+    }
+
+    /**
+     * One item's outcome, in the vocabulary the outbox needs.
+     *
+     * `status` is exactly three values because the client has exactly three
+     * responses to it:
+     *   applied / duplicate -> drop it, the answer is on the server
+     *   rejected            -> drop it, it will never succeed
+     *   failed              -> keep it, this may work later
+     */
+    private function applyBatchItem(int $userId, mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return ['clientId' => null, 'status' => 'rejected', 'error' => 'Yaroqsiz format.'];
+        }
+
+        $form = new ReviewForm();
+        $form->load($raw, '');
+        $clientId = $form->clientId();
+
+        if (!$form->validate()) {
+            return [
+                'clientId' => $clientId,
+                'status' => 'rejected',
+                'error' => 'Validation failed.',
+                'fields' => $form->getErrors(),
+            ];
+        }
+
+        try {
+            $result = $this->reviews->recordAnswer(
+                $userId,
+                $form->cardId(),
+                $form->isCorrect(),
+                $form->reviewedAt(),
+                $clientId,
+            );
+
+            return [
+                'clientId' => $clientId,
+                'status' => $result->duplicate ? 'duplicate' : 'applied',
+                'level_after' => (int) $result->progress->current_level,
+            ];
+        } catch (NotFoundHttpException | ForbiddenHttpException) {
+            // The card is gone, or it is not theirs. Retrying cannot change it.
+            return ['clientId' => $clientId, 'status' => 'rejected', 'error' => 'Karta topilmadi.'];
+        } catch (\Throwable $e) {
+            // A deadlock or a transient database error. Worth another attempt.
+            Yii::error($e, __METHOD__);
+
+            return ['clientId' => $clientId, 'status' => 'failed', 'error' => 'Server xatosi.'];
+        }
     }
 
     /**

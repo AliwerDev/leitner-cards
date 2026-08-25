@@ -437,6 +437,14 @@ export const uz = {
     offlineBody: "Ma'lumot eskirgan bo'lishi mumkin.",
     retry: "Qayta urinish",
 
+    // Offline study. The banner sits inside a full-screen session, so it is one
+    // line: a paragraph there is noise, and the answers are safe either way.
+    offlineStudyBody: "Oflayn rejim. Javoblar saqlanadi va internet qaytganda yuboriladi.",
+    // Shown when the queue itself came from disk rather than from the server.
+    offlineQueueCached: "Ro'yxat oxirgi yuklangan holatda.",
+    // The short chip on the decks list. pendingBody is the long form.
+    syncPending: (n: number) => `${n} ta javob yuborilmadi`,
+
     // A due card that has never been answered. The web conflates this with
     // "mastered" because both send next_review_at: null - see formatNextReview.
     newCard: "Yangi",

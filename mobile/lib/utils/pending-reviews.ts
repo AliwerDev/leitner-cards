@@ -1,9 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiError } from "@/lib/api/error";
-import { submitReview } from "@/lib/api/endpoints/reviews";
+import { submitReviewBatch } from "@/lib/api/endpoints/reviews";
 
 /**
- * A durable outbox for answers the server did not accept.
+ * A durable outbox for answers the server has not accepted yet.
  *
  * WHY THIS EXISTS ON MOBILE AND NOT ON THE WEB. The web keeps failed writes in
  * component state (see the `failed` array in
@@ -13,21 +13,31 @@ import { submitReview } from "@/lib/api/endpoints/reviews";
  * user who answers twenty cards on the underground, switches apps, and has
  * this one reaped loses all twenty with no way to know it happened.
  *
- * THE TRADE, STATED HONESTLY. Replaying an answer is not perfectly idempotent:
- * it appends a second review_history row and re-applies the level transition,
- * so reviews_today can double-count. Losing an answer outright is worse than
- * counting one twice, so the outbox wins - but it is a trade, not a free win.
+ * WHAT CHANGED. This file used to admit that replay was not idempotent - a
+ * resent answer appended a second review_history row and double-counted
+ * reviews_today. Every entry now carries a `clientId`, and the server has a
+ * UNIQUE (user_id, client_id) index behind it, so a duplicate is recognised
+ * and reported rather than applied twice. The old trade is gone.
  *
  * WHAT IS NOT RETRIED. A 422 or a 404 will fail identically forever: the card
- * was deleted on another device, or the payload is malformed. Those are dropped
- * and reported, not retried until the end of time.
+ * was deleted on another device, or the payload is malformed. Those are
+ * dropped and reported, not retried until the end of time.
  */
 
 export type PendingReview = {
+  /** Local array key. Not sent to the server. */
   id: string;
+  /**
+   * The idempotency token the server indexes.
+   *
+   * Distinct from `id` and load-bearing in a way it is not: this value must
+   * never change once written, or a retry after a partial failure lands a
+   * second copy of the same answer.
+   */
+  clientId: string;
   cardId: number;
   wasCorrect: boolean;
-  /** Unix milliseconds, for the age cap. */
+  /** Unix milliseconds - for the age cap, and for the server's reviewedAt. */
   at: number;
 };
 
@@ -37,8 +47,54 @@ const KEY = "leitner-pending-reviews";
 const MAX_ENTRIES = 500;
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** Mirrors ReviewController::MAX_BATCH. */
+const BATCH_SIZE = 100;
+
 function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * Validate one stored entry, and backfill a clientId when it predates the
+ * field.
+ *
+ * BACKFILL ON READ RATHER THAN A SCHEMA VERSION. A version field means a
+ * migration step that has to run before anything can read the outbox, and a
+ * failure there loses answers. Backfilling is idempotent, costs one string per
+ * legacy entry, and cannot fail. The backfilled token is derived from the
+ * entry's own `id`, which is already unique per enqueue, so a legacy entry
+ * keeps a stable token across reads - if it did not, a retry after a crash
+ * would look like a new answer and defeat the whole point.
+ *
+ * Everything else stays a field-by-field check for the reason it always was: a
+ * corrupt entry must be dropped, not thrown, or the study screen dies on a bad
+ * byte in AsyncStorage.
+ */
+function normalize(entry: unknown, cutoff: number): PendingReview | null {
+  if (typeof entry !== "object" || entry === null) return null;
+
+  const candidate = entry as Partial<PendingReview>;
+
+  if (
+    typeof candidate.id !== "string" ||
+    typeof candidate.cardId !== "number" ||
+    typeof candidate.wasCorrect !== "boolean" ||
+    typeof candidate.at !== "number" ||
+    candidate.at <= cutoff
+  ) {
+    return null;
+  }
+
+  return {
+    id: candidate.id,
+    clientId:
+      typeof candidate.clientId === "string" && candidate.clientId !== ""
+        ? candidate.clientId
+        : `legacy-${candidate.id}`,
+    cardId: candidate.cardId,
+    wasCorrect: candidate.wasCorrect,
+    at: candidate.at,
+  };
 }
 
 export async function readPending(): Promise<PendingReview[]> {
@@ -50,16 +106,10 @@ export async function readPending(): Promise<PendingReview[]> {
     if (!Array.isArray(parsed)) return [];
 
     const cutoff = Date.now() - MAX_AGE_MS;
-    return parsed.filter(
-      (entry): entry is PendingReview =>
-        typeof entry === "object" &&
-        entry !== null &&
-        typeof (entry as PendingReview).id === "string" &&
-        typeof (entry as PendingReview).cardId === "number" &&
-        typeof (entry as PendingReview).wasCorrect === "boolean" &&
-        typeof (entry as PendingReview).at === "number" &&
-        (entry as PendingReview).at > cutoff,
-    );
+
+    return parsed
+      .map((entry) => normalize(entry, cutoff))
+      .filter((entry): entry is PendingReview => entry !== null);
   } catch {
     // Corrupt storage must not break the study screen. An unreadable outbox is
     // the same as an empty one from the UI's point of view.
@@ -78,10 +128,46 @@ async function write(entries: PendingReview[]): Promise<void> {
   }
 }
 
-export async function addPending(cardId: number, wasCorrect: boolean): Promise<void> {
+/**
+ * Record an answer, and hand back the entry that was written.
+ *
+ * WRITE FIRST, ALWAYS. The old code called this only once a POST had already
+ * failed, which left a window: the app can be killed between the answer and
+ * the failure, and the answer is gone with no trace it ever existed. The disk
+ * write now happens before the request is attempted, so the worst case is a
+ * duplicate submission - which the clientId makes free - rather than a lost
+ * one.
+ */
+export async function enqueue(cardId: number, wasCorrect: boolean): Promise<PendingReview> {
+  const entry: PendingReview = {
+    id: makeId(),
+    clientId: makeId(),
+    cardId,
+    wasCorrect,
+    at: Date.now(),
+  };
+
   const entries = await readPending();
-  entries.push({ id: makeId(), cardId, wasCorrect, at: Date.now() });
+  entries.push(entry);
   await write(entries);
+
+  return entry;
+}
+
+/**
+ * Remove entries the server has confirmed.
+ *
+ * Re-reads before writing rather than splicing a held array: a flush and a
+ * live answer can both be in flight, and writing a stale array would resurrect
+ * an entry the other had just cleared.
+ */
+export async function removePending(clientIds: readonly string[]): Promise<void> {
+  if (clientIds.length === 0) return;
+
+  const drop = new Set(clientIds);
+  const entries = await readPending();
+
+  await write(entries.filter((entry) => !drop.has(entry.clientId)));
 }
 
 export async function clearPending(): Promise<void> {
@@ -101,37 +187,103 @@ export type FlushResult = {
 };
 
 /**
+ * One flush at a time, process-wide.
+ *
+ * usePendingFlush mounts in two places - the root, so syncing is not limited
+ * to the profile tab, and profile itself, for the count it displays. Each hook
+ * has its own re-entry ref, so the guard has to live below both of them or the
+ * two mounts send the same batch twice.
+ */
+let flushing = false;
+
+/**
  * Try to send everything in the outbox.
  *
- * Sequential rather than parallel on purpose: a queue that filled up offline
- * would otherwise fire fifty simultaneous requests the moment a connection
- * returns, and each POST /reviews takes a row lock on the card's progress.
+ * Chunked and sequential, not parallel. The old code sent one request per
+ * answer for the same reason it was sequential: each POST /reviews takes a row
+ * lock on the card's progress, and a queue filled up offline would otherwise
+ * fire fifty simultaneous requests the moment a connection returned. A batch
+ * collapses fifty requests into one, but the chunks still go one after another
+ * - both for that reason and because a batch is applied in order.
+ *
+ * ORDER IS LOAD-BEARING. Two answers to the same card must reach the server
+ * oldest-first or the ladder lands wrong: correct-then-wrong leaves the card
+ * at level 1, wrong-then-correct at level 2. The outbox is append-ordered, so
+ * slicing it in order preserves that, and the server sorts by reviewedAt as
+ * well - neither side relies on the other to get it right.
  */
 export async function flushPending(): Promise<FlushResult> {
-  const entries = await readPending();
-  if (entries.length === 0) return { sent: 0, dropped: 0, remaining: 0 };
-
-  const stillPending: PendingReview[] = [];
-  let sent = 0;
-  let dropped = 0;
-
-  for (const entry of entries) {
-    try {
-      await submitReview({ cardId: entry.cardId, wasCorrect: entry.wasCorrect });
-      sent += 1;
-    } catch (error) {
-      const permanent =
-        error instanceof ApiError &&
-        (error.isValidation || error.isNotFound || error.isForbidden);
-
-      if (permanent) {
-        dropped += 1;
-      } else {
-        stillPending.push(entry);
-      }
-    }
+  if (flushing) {
+    return { sent: 0, dropped: 0, remaining: (await readPending()).length };
   }
 
-  await write(stillPending);
-  return { sent, dropped, remaining: stillPending.length };
+  flushing = true;
+
+  try {
+    const entries = await readPending();
+    if (entries.length === 0) return { sent: 0, dropped: 0, remaining: 0 };
+
+    const settled = new Set<string>();
+    let sent = 0;
+    let dropped = 0;
+
+    for (let start = 0; start < entries.length; start += BATCH_SIZE) {
+      const chunk = entries.slice(start, start + BATCH_SIZE);
+
+      try {
+        const response = await submitReviewBatch(
+          chunk.map((entry) => ({
+            cardId: entry.cardId,
+            wasCorrect: entry.wasCorrect,
+            // Seconds: the backend stores every timestamp as a second integer.
+            reviewedAt: Math.floor(entry.at / 1000),
+            clientId: entry.clientId,
+          })),
+        );
+
+        for (const result of response.results) {
+          if (result.clientId === null) continue;
+
+          if (result.status === "applied" || result.status === "duplicate") {
+            settled.add(result.clientId);
+            sent += 1;
+          } else if (result.status === "rejected") {
+            settled.add(result.clientId);
+            dropped += 1;
+          }
+          // "failed" is left in the outbox for the next attempt.
+        }
+      } catch (error) {
+        const permanent =
+          error instanceof ApiError &&
+          (error.isValidation || error.isNotFound || error.isForbidden);
+
+        if (permanent) {
+          // The whole chunk was rejected at the envelope level - an oversize
+          // batch, or a body the server could not parse. Resending it
+          // unchanged cannot work, so drop it rather than wedge the outbox
+          // behind it forever.
+          for (const entry of chunk) {
+            settled.add(entry.clientId);
+            dropped += 1;
+          }
+          continue;
+        }
+
+        /*
+         * No connection, or the server is down. Stop rather than grind through
+         * the remaining chunks: every one of them fails the same way, and the
+         * later chunks hold the newer answers, which must not reach the server
+         * before the earlier ones if the connection recovers mid-loop.
+         */
+        break;
+      }
+    }
+
+    await removePending([...settled]);
+
+    return { sent, dropped, remaining: entries.length - settled.size };
+  } finally {
+    flushing = false;
+  }
 }
