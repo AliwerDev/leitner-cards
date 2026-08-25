@@ -1,10 +1,10 @@
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import {
   DarkTheme,
   DefaultTheme,
+  Stack,
   ThemeProvider as NavigationThemeProvider,
-} from "@react-navigation/native";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { Stack } from "expo-router";
+} from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
