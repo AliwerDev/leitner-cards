@@ -1,5 +1,6 @@
 export { Button, type ButtonProps } from "./button";
 export { Card, type CardProps } from "./card";
+export { IconButton, type IconButtonProps } from "./icon-button";
 export { Input, type InputProps } from "./input";
 export { Text, type TextProps, type TextTone, type TextVariant } from "./text";
 export {

@@ -1,9 +1,18 @@
 import { router, useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 import { useCallback } from "react";
 import { FlatList, RefreshControl, View } from "react-native";
 import { Screen } from "@/components/layout/screen";
 import { DeckCard } from "@/components/decks/deck-card";
-import { Alert, Button, EmptyState, ErrorState, LoadingState, Text } from "@/components/ui";
+import {
+  Alert,
+  Button,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  LoadingState,
+  Text,
+} from "@/components/ui";
 import { useDeckCounts, useDecks } from "@/hooks/use-decks";
 import { usePrefetchDueQueue } from "@/hooks/use-due";
 import { usePendingFlush } from "@/hooks/use-pending-flush";
@@ -15,7 +24,7 @@ import { uz } from "@/lib/i18n/uz";
 import { useTheme } from "@/lib/theme/theme-context";
 
 export default function DecksScreen() {
-  const { space } = useTheme();
+  const { colors, space } = useTheme();
   const { quota } = useAuth();
   const navigation = useRouter();
   const { data, isPending, error, refetch, isRefetching } = useDecks();
@@ -86,11 +95,24 @@ export default function DecksScreen() {
               }}
             >
               <Text variant="title">{uz.deck.title}</Text>
-              {quota ? (
-                <Text variant="caption" tone="subtle">
-                  {decksLabel(quota)}
-                </Text>
-              ) : null}
+
+              {/* The quota reading and the create action, in that order: the
+                  number explains whether the button will work. */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+                {quota ? (
+                  <Text variant="caption" tone="subtle">
+                    {decksLabel(quota)}
+                  </Text>
+                ) : null}
+                {canCreate ? (
+                  <IconButton
+                    icon={<Plus color={colors.textOnAccent} size={20} strokeWidth={2.25} />}
+                    label={uz.deck.create}
+                    size="sm"
+                    onPress={() => router.push("/deck-form")}
+                  />
+                ) : null}
+              </View>
             </View>
 
             {quota && !canCreateDeck(quota) ? (
@@ -137,12 +159,6 @@ export default function DecksScreen() {
           />
         )}
       />
-
-      {data && data.length > 0 && canCreate ? (
-        <View style={{ padding: space.md, paddingTop: 0 }}>
-          <Button label={uz.deck.create} block onPress={() => router.push("/deck-form")} />
-        </View>
-      ) : null}
     </Screen>
   );
 }
