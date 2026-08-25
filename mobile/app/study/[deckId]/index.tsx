@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "@/components/layout/screen";
 import { StudySession } from "@/components/study/study-session";
-import { queueKey } from "@/components/study/queue-key";
 import { StudyEmpty } from "@/components/study/study-empty";
 import { ErrorState, LoadingState } from "@/components/ui";
 import { useDeck } from "@/hooks/use-decks";
@@ -12,7 +11,7 @@ import { ApiError } from "@/lib/api/error";
 import { deckAccent } from "@/lib/domain/deck-color";
 import { apiErrorMessage } from "@/lib/i18n/api-errors";
 import { uz } from "@/lib/i18n/uz";
-import { qk, qkPrefix } from "@/lib/query/keys";
+import { refreshAfterStudy } from "@/lib/query/refresh";
 import { useTheme } from "@/lib/theme/theme-context";
 
 /**
@@ -29,7 +28,8 @@ export default function DeckStudyScreen() {
   const { colors, resolved } = useTheme();
 
   const deckQuery = useDeck(deckId);
-  const { cards, count, hasData, isRestoring, online, query } = useOfflineQueue(deckId);
+  const { cards, count, sessionKey, nextQueue, awaitingNext, hasData, isRestoring, online, query } =
+    useOfflineQueue(deckId);
 
   // Rendered by every branch below, so the header and its back button are
   // there while the queue is still loading and when it comes back empty. Once
@@ -39,9 +39,10 @@ export default function DeckStudyScreen() {
 
   /*
    * "No data anywhere" rather than "a request is in flight" - see the same
-   * branch in app/study/index.tsx for why the two had to be separated.
+   * branch in app/study/index.tsx for why the two had to be separated, and
+   * for what awaitingNext covers.
    */
-  if (isRestoring || (query.isPending && !hasData)) {
+  if (isRestoring || awaitingNext || (query.isPending && !hasData)) {
     return (
       <>
         {header}
@@ -86,24 +87,27 @@ export default function DeckStudyScreen() {
   const accent = deck ? deckAccent(deck.color, deck.id, resolved) : colors.accent;
 
   const finish = () => {
-    void queryClient.invalidateQueries({ queryKey: qkPrefix.due });
-    void queryClient.invalidateQueries({ queryKey: qkPrefix.stats });
-    void queryClient.invalidateQueries({ queryKey: qk.deckStats(deckId) });
+    // Every deck, not only this one: refreshAfterStudy covers the account-wide
+    // keys the old three calls here missed, and this deck's stats are inside
+    // the same prefix. See lib/query/refresh.ts for why that is not expensive.
     router.back();
+    void refreshAfterStudy(queryClient);
   };
 
   return (
     <>
       {header}
       <StudySession
-        key={queueKey(cards)}
+        // See app/study/index.tsx for why this key is not derived from the
+        // cached queue.
+        key={sessionKey}
         cards={cards}
         queueWasFull={count >= ALL_DUE_CAP}
         deckId={deckId}
         offline={!online}
         accent={accent}
         onFinish={finish}
-        onContinue={() => void query.refetch()}
+        onContinue={() => void nextQueue()}
       />
     </>
   );

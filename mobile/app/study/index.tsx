@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { Screen } from "@/components/layout/screen";
 import { StudySession } from "@/components/study/study-session";
-import { queueKey } from "@/components/study/queue-key";
 import { StudyEmpty } from "@/components/study/study-empty";
 import { ErrorState, LoadingState } from "@/components/ui";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
@@ -10,7 +9,7 @@ import { ALL_DUE_CAP } from "@/lib/api/endpoints/reviews";
 import { ApiError } from "@/lib/api/error";
 import { apiErrorMessage } from "@/lib/i18n/api-errors";
 import { uz } from "@/lib/i18n/uz";
-import { qkPrefix } from "@/lib/query/keys";
+import { refreshAfterStudy } from "@/lib/query/refresh";
 import { useTheme } from "@/lib/theme/theme-context";
 
 /**
@@ -28,7 +27,8 @@ export default function StudyScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const { cards, count, hasData, isRestoring, online, query } = useOfflineQueue();
+  const { cards, count, sessionKey, nextQueue, awaitingNext, hasData, isRestoring, online, query } =
+    useOfflineQueue();
 
   // Rendered by every branch, so the header and its back button are there
   // while the queue is still loading and when it comes back empty.
@@ -41,9 +41,11 @@ export default function StudyScreen() {
    * gating the session on it meant an offline user watched a spinner over a
    * queue that was on disk the whole time. isRestoring covers the few hundred
    * milliseconds before that disk read lands, so the screen does not flash
-   * "no cards" and then fill in.
+   * "no cards" and then fill in. awaitingNext is the same flash at the other
+   * end of a session: the summary asked for another queue, and the one it just
+   * worked through is already gone from the cache.
    */
-  if (isRestoring || (query.isPending && !hasData)) {
+  if (isRestoring || awaitingNext || (query.isPending && !hasData)) {
     return (
       <>
         {header}
@@ -89,29 +91,29 @@ export default function StudyScreen() {
   }
 
   const finish = () => {
-    // The session wrote due_count into the cache as it went, but the queue and
-    // every aggregate are now stale.
-    void queryClient.invalidateQueries({ queryKey: qkPrefix.due });
-    void queryClient.invalidateQueries({ queryKey: qkPrefix.stats });
+    // The session edited the cache as it went, but those edits are a local
+    // overlay - the queue, the badge, and every aggregate need the server now.
+    // Leaving first, refreshing second: the refetches belong to the screen
+    // behind this one, and nothing here waits on them.
     router.back();
+    void refreshAfterStudy(queryClient);
   };
 
   return (
     <>
       {header}
       <StudySession
-        // Remount on a new queue so the state machine starts clean rather than
-        // resuming at a stale index. Note that `cards` is filtered against the
-        // outbox, so this key would also change if that filter were reactive -
-        // it is a mount-time snapshot precisely so a session cannot be
-        // remounted out from under the user mid-answer.
-        key={queueKey(cards)}
+        // Remount only for a genuinely new queue, so the state machine starts
+        // clean on "more cards left" and is never restarted under the user
+        // mid-session. useOfflineQueue owns that distinction - the cached queue
+        // shrinks on every answer and must not be read as a new one.
+        key={sessionKey}
         cards={cards}
         queueWasFull={count >= ALL_DUE_CAP}
         offline={!online}
         accent={colors.accent}
         onFinish={finish}
-        onContinue={() => void query.refetch()}
+        onContinue={() => void nextQueue()}
       />
     </>
   );

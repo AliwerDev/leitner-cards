@@ -35,6 +35,8 @@ export const qk = {
 
 /** Prefixes, for invalidating a whole family at once. */
 export const qkPrefix = {
+  /** Covers the deck list, every deck detail, and every deck's stats. */
+  decks: ["decks"] as const,
   cards: ["cards"] as const,
   due: ["due"] as const,
   dueCount: ["dueCount"] as const,
